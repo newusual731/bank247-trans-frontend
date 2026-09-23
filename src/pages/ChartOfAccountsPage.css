@@ -1,0 +1,149 @@
+.coa {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0f9f94;
+}
+
+.coa-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.coa h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.coa-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding: 0 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--export);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coa-toolbar {
+  display: flex;
+  gap: 0.65rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.coa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 140px;
+}
+
+.coa-field > span {
+  font-size: 0.7rem;
+  font-weight: 550;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.coa-select {
+  position: relative;
+}
+
+.coa-select select,
+.coa-field > input,
+.coa-fdrop-trigger {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.coa-select select {
+  appearance: none;
+  padding-right: 1.8rem;
+}
+
+.coa-select svg {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.coa-fdrop {
+  width: 100%;
+}
+
+.coa-fdrop-trigger {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  border: 1px solid var(--border) !important;
+  cursor: pointer;
+}
+
+.coa-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.coa-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1200px;
+}
+
+.coa-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 550;
+  color: var(--muted);
+  padding: 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.coa-table th svg {
+  display: inline-block;
+  vertical-align: -1px;
+  color: #9ca3af;
+}
+
+.coa-table td {
+  padding: 0.85rem 0.7rem;
+  font-size: 0.78rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  white-space: nowrap;
+}
+
+.coa-table tbody tr:hover td {
+  background: #fafbfc;
+}

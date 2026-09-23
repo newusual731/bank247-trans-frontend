@@ -1,0 +1,238 @@
+.dsum {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0f9f94;
+  --export-hover: #0d8a81;
+  --print: #4659a7;
+  --print-hover: #3b4d91;
+  --generate: #1e40af;
+  --generate-hover: #1e3a8a;
+  --debit-bg: #feeeee;
+  --debit-text: #b42318;
+  --credit-bg: #e8f7f0;
+  --credit-text: #067647;
+  --net: #dc2626;
+}
+
+.dsum h1 {
+  margin: 0 0 1.1rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.dsum-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem 0.7rem;
+  margin-bottom: 0.95rem;
+  align-items: end;
+}
+
+.dsum-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.dsum-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.dsum-date,
+.dsum-select {
+  position: relative;
+}
+
+.dsum-date input,
+.dsum-select select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 2rem 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.dsum-select select {
+  appearance: none;
+}
+
+.dsum-date input:focus,
+.dsum-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.dsum-date svg,
+.dsum-select svg {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.dsum-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.15rem;
+  flex-wrap: wrap;
+}
+
+.dsum-actions-left {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.dsum-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dsum-btn--export {
+  background: var(--export);
+}
+
+.dsum-btn--export:hover {
+  background: var(--export-hover);
+}
+
+.dsum-btn--print {
+  background: var(--print);
+}
+
+.dsum-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.dsum-btn--generate {
+  background: var(--generate);
+}
+
+.dsum-btn--generate:hover {
+  background: var(--generate-hover);
+}
+
+.dsum-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.dsum-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.dsum-table th {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #6b7280;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.dsum-table th.is-left,
+.dsum-table td.is-left {
+  text-align: left;
+}
+
+.dsum-th {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.dsum-th--debit {
+  background: var(--debit-bg);
+  color: var(--debit-text);
+}
+
+.dsum-th--credit {
+  background: var(--credit-bg);
+  color: var(--credit-text);
+}
+
+.dsum-table td {
+  text-align: center;
+  padding: 0.85rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.dsum-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.dsum-total td {
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  background: #fff !important;
+  vertical-align: top;
+}
+
+.dsum-total-cell {
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+}
+
+.dsum-net {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--net);
+}
+
+.dsum-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 1100px) {
+  .dsum-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dsum-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

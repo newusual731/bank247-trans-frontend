@@ -1,0 +1,89 @@
+.fdrop {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.fdrop-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.fdrop-menu {
+  --fdrop-border: #111827;
+  --fdrop-hover: #fff1f0;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.35rem;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--fdrop-border);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.fdrop-menu.is-end {
+  left: auto;
+  right: 0;
+}
+
+.fdrop-menu.is-checked {
+  min-width: 320px;
+  padding: 0.45rem 0.4rem;
+}
+
+.fdrop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 450;
+  color: #111827;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fdrop-menu.is-center .fdrop-item {
+  justify-content: center;
+  text-align: center;
+}
+
+.fdrop-menu.is-highlight .fdrop-item:hover,
+.fdrop-menu.is-highlight .fdrop-item.is-active {
+  background: var(--fdrop-hover);
+}
+
+.fdrop-menu:not(.is-highlight) .fdrop-item:hover {
+  background: #f3f4f6;
+}
+
+.fdrop-menu:not(.is-highlight) .fdrop-item.is-active {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.fdrop-check {
+  width: 0.9rem;
+  flex: 0 0 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #111827;
+}

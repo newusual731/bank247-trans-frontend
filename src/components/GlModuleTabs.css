@@ -1,0 +1,32 @@
+.gl-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1rem;
+}
+
+.gl-tabs a {
+  text-decoration: none;
+  color: #6b7280;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.4rem 0 0.7rem;
+  position: relative;
+}
+
+.gl-tabs a.is-active {
+  color: #111827;
+  font-weight: 650;
+}
+
+.gl-tabs a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #2563eb;
+  border-radius: 2px 2px 0 0;
+}

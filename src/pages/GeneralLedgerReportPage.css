@@ -1,0 +1,245 @@
+.glr {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0d9488;
+  --export-hover: #0f766e;
+  --print: #3f51b5;
+  --print-hover: #3949ab;
+  --debit-bg: #fee2e2;
+  --debit-text: #991b1b;
+  --credit-bg: #dcfce7;
+  --credit-text: #166534;
+}
+
+.glr-report-tabs {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.glr-report-tabs a {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid transparent;
+}
+
+.glr-report-tabs a.is-active,
+.glr-report-tabs a:hover {
+  color: #2563eb;
+}
+
+.glr-report-tabs a.is-active {
+  border-bottom-color: #2563eb;
+  font-weight: 650;
+}
+
+.glr h1 {
+  margin: 0 0 1.1rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.glr-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.55fr) repeat(7, minmax(0, 1fr));
+  gap: 0.75rem 0.55rem;
+  margin-bottom: 0.85rem;
+  align-items: end;
+}
+
+.glr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.glr-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.glr-range {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.glr-range-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.glr-range input,
+.glr-select select {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.glr-range input {
+  width: 8.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.glr-select {
+  position: relative;
+}
+
+.glr-select select {
+  width: 100%;
+  appearance: none;
+  padding-right: 1.7rem;
+}
+
+.glr-select svg {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.glr-range input:focus,
+.glr-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.glr-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+}
+
+.glr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.glr-btn--export {
+  background: var(--export);
+}
+
+.glr-btn--export:hover {
+  background: var(--export-hover);
+}
+
+.glr-btn--print {
+  background: var(--print);
+}
+
+.glr-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.glr-table-wrap {
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.glr-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1180px;
+}
+
+.glr-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fff;
+  vertical-align: middle;
+}
+
+.glr-th {
+  display: inline-block;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.glr-th--debit {
+  background: var(--debit-bg);
+  color: var(--debit-text);
+}
+
+.glr-th--credit {
+  background: var(--credit-bg);
+  color: var(--credit-text);
+}
+
+.glr-table td {
+  padding: 0.85rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #374151;
+  border-bottom: 1px solid #eef0f2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.glr-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.glr-total td {
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 1.05rem;
+  padding-bottom: 1.05rem;
+  background: #fff !important;
+}
+
+@media (max-width: 1280px) {
+  .glr-filters {
+    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .glr-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .glr-field--range {
+    grid-column: 1 / -1;
+  }
+
+  .glr-range {
+    flex-wrap: wrap;
+  }
+}

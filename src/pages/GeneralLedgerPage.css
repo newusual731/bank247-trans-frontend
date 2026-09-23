@@ -1,0 +1,146 @@
+.gl {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+.gl h1 {
+  margin: 0 0 1.05rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.gl-filters {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.4fr) repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+  align-items: end;
+}
+
+.gl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.gl-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.gl-range {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.gl-range-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.gl-range input,
+.gl-select select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.gl-range input {
+  width: 9.2rem;
+}
+
+.gl-select {
+  position: relative;
+}
+
+.gl-select select {
+  width: 100%;
+  appearance: none;
+  padding-right: 1.85rem;
+}
+
+.gl-select svg {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.gl-range input:focus,
+.gl-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.gl-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.gl-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.gl-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #6b7280;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fff;
+}
+
+.gl-table th svg {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-left: 0.15rem;
+  color: #9ca3af;
+}
+
+.gl-table td {
+  padding: 0.85rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  white-space: nowrap;
+}
+
+.gl-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.gl-table tbody tr:hover td {
+  background: #f3f4f6;
+}
+
+@media (max-width: 1100px) {
+  .gl-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gl-field--range {
+    grid-column: 1 / -1;
+  }
+}

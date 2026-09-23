@@ -1,0 +1,239 @@
+.audit {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0f9f94;
+  --export-hover: #0d8a81;
+  --print: #4659a7;
+  --print-hover: #3b4d91;
+}
+
+.audit-report-tabs {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.audit-report-tabs a {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid transparent;
+}
+
+.audit-report-tabs a.is-active,
+.audit-report-tabs a:hover {
+  color: #2563eb;
+}
+
+.audit-report-tabs a.is-active {
+  border-bottom-color: #2563eb;
+  font-weight: 650;
+}
+
+.audit h1 {
+  margin: 0 0 1.1rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem 0.7rem;
+  margin-bottom: 0.95rem;
+  align-items: end;
+}
+
+.audit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.audit-field > span {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.audit-date,
+.audit-select {
+  position: relative;
+}
+
+.audit-date input,
+.audit-select select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 2rem 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.audit-select select {
+  appearance: none;
+}
+
+.audit-date input:focus,
+.audit-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.audit-date svg,
+.audit-select svg {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.audit-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+}
+
+.audit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.audit-btn--export {
+  background: var(--export);
+}
+
+.audit-btn--export:hover {
+  background: var(--export-hover);
+}
+
+.audit-btn--print {
+  background: var(--print);
+}
+
+.audit-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.audit-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.audit-table th {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #6b7280;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  white-space: nowrap;
+}
+
+.audit-table th.is-left,
+.audit-table td.is-left {
+  text-align: left;
+}
+
+.audit-table td {
+  text-align: center;
+  padding: 0.85rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.audit-ts {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.audit-ts strong {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.audit-ts span {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.audit-details {
+  border: none;
+  background: transparent;
+  color: #374151;
+  font: inherit;
+  cursor: default;
+  padding: 0;
+}
+
+.audit-details:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.audit-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.audit-tooltip {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -100%);
+  background: #fff;
+  border: 1.5px solid #111827;
+  border-radius: 20px;
+  padding: 0.85rem 1.15rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #111827;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+}
+
+@media (max-width: 1100px) {
+  .audit-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .audit-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

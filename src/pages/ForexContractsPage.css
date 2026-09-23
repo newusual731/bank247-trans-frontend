@@ -1,0 +1,380 @@
+.forex {
+  --blue: #2563eb;
+  --blue-deep: #1d4ed8;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --text: #111827;
+  --status: #0f766e;
+  --danger: #dc2626;
+  --link: #2563eb;
+}
+
+.forex-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.forex-head h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.forex-add {
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.forex-add:hover {
+  background: var(--blue-deep);
+}
+
+.forex-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-top: 0.35rem;
+}
+
+.forex-filter-btn,
+.forex-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 550;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.forex-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.15rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.95rem;
+}
+
+.forex-tabs a {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.45rem 0 0.7rem;
+  position: relative;
+}
+
+.forex-tabs a.is-active {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.forex-tabs a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 2px 2px 0 0;
+}
+
+.forex-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 360px);
+  height: 38px;
+  padding: 0 0.85rem;
+  margin-bottom: 0.85rem;
+  border-radius: 8px;
+  background: #eceef2;
+  color: #9ca3af;
+}
+
+.forex-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.forex-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.forex-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+.forex-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 550;
+  color: var(--muted);
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fff;
+}
+
+.forex-table td {
+  padding: 0.85rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.forex-table td.is-amount {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.forex-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.forex-status {
+  color: var(--status);
+  font-weight: 550;
+}
+
+.forex-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #9ca3af;
+}
+
+.forex-actions button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 550;
+  color: var(--link);
+  cursor: pointer;
+}
+
+.forex-actions button.is-danger {
+  color: var(--danger);
+}
+
+.forex-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.forex-modal {
+  width: min(720px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.forex-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.35rem 0.85rem;
+}
+
+.forex-modal-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.forex-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.forex-modal-body {
+  padding: 0.35rem 1.35rem 1rem;
+}
+
+.forex-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1rem;
+}
+
+.forex-modal-grid--gl {
+  margin-top: 0.15rem;
+}
+
+.forex-gl-title {
+  margin: 1.15rem 0 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.forex-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.forex-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.forex-field input,
+.forex-date {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.forex-date {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-right: 0.55rem;
+  color: #9ca3af;
+}
+
+.forex-date input {
+  border: none;
+  padding: 0;
+  height: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.forex-field input:focus,
+.forex-date:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.forex-fdrop {
+  width: 100%;
+}
+
+.forex-fdrop-trigger {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px;
+  background: #fff !important;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  justify-content: space-between;
+}
+
+.forex-fdrop-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.forex-fdrop-trigger svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.forex-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.35rem 1.2rem;
+  border-top: 1px solid #f1f2f4;
+}
+
+.forex-modal-foot-left {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.forex-btn-ghost {
+  height: 36px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.forex-btn-primary {
+  height: 36px;
+  padding: 0 1.15rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.forex-btn-primary:hover {
+  background: var(--blue-deep);
+}
+
+@media (max-width: 640px) {
+  .forex-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .forex-modal-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,250 @@
+.shell {
+  --shell-bg: #f5f6f8;
+  --shell-sidebar: #f3f4f6;
+  --shell-active-bg: #fde8e4;
+  --shell-active-bar: #c45c4a;
+  --shell-active-text: #8b3a2d;
+  --shell-text: #374151;
+  --shell-muted: #6b7280;
+  --shell-border: #e5e7eb;
+  --shell-blue: #2563eb;
+  --shell-blue-hover: #1d4ed8;
+
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--shell-bg);
+  color: #111827;
+  font-family:
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+}
+
+.shell-sidebar {
+  background: var(--shell-sidebar);
+  border-right: 1px solid #eceef2;
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 0.75rem 0.85rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.shell-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  color: var(--shell-text);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+  position: relative;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell-nav-item:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.shell-nav-item.is-active {
+  background: var(--shell-active-bg);
+  color: var(--shell-active-text);
+  font-weight: 600;
+}
+
+.shell-nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--shell-active-bar);
+}
+
+.shell-nav-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.shell-sidebar-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.shell-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.55rem 0.35rem;
+}
+
+.shell-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #d1d5db, #9ca3af);
+  flex-shrink: 0;
+}
+
+.shell-user-meta {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.shell-user-meta strong {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.shell-user-meta span {
+  font-size: 0.7rem;
+  color: var(--shell-muted);
+}
+
+.shell-logout {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  padding: 0.25rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.shell-logout:hover {
+  color: #111827;
+}
+
+.shell-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.75rem 0.35rem;
+}
+
+.shell-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(280px, 42vw);
+  height: 38px;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: #eceef2;
+  color: #9ca3af;
+}
+
+.shell-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.82rem;
+  color: #111827;
+}
+
+.shell-search input::placeholder {
+  color: #9ca3af;
+}
+
+.shell-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.shell-icon-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #4b5563;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.shell-icon-btn:hover {
+  background: #eceef2;
+}
+
+.shell-user-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.35rem 0.4rem;
+  cursor: pointer;
+}
+
+.shell-content {
+  padding: 0.65rem 1.75rem 2rem;
+  flex: 1;
+}
+
+@media (max-width: 960px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .shell-sidebar {
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--shell-border);
+  }
+
+  .shell-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .shell-nav-item.is-active::before {
+    display: none;
+  }
+
+  .shell-sidebar-foot {
+    margin-top: 0.5rem;
+  }
+}

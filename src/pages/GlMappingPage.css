@@ -1,0 +1,364 @@
+.glm {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --blue: #2563eb;
+  --blue-deep: #1d4ed8;
+  --export: #0d9488;
+  --export-hover: #0f766e;
+  --print: #4659a7;
+  --print-hover: #3b4d91;
+  --title: #1e3a5f;
+}
+
+.glm h1 {
+  margin: 0 0 1.1rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--title);
+}
+
+.glm-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem 0.7rem;
+  margin-bottom: 1rem;
+  align-items: end;
+}
+
+.glm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.glm-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.glm-select {
+  position: relative;
+}
+
+.glm-select select,
+.glm-fdrop-trigger {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.glm-select select {
+  appearance: none;
+  padding-right: 1.85rem;
+}
+
+.glm-select svg {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.glm-select select:focus,
+.glm-fdrop-trigger:focus-visible {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.glm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.15rem;
+  flex-wrap: wrap;
+}
+
+.glm-actions-right {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.glm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.glm-btn--primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.glm-btn--primary:hover {
+  background: var(--blue-deep);
+}
+
+.glm-btn--export {
+  background: var(--export);
+  color: #fff;
+}
+
+.glm-btn--export:hover {
+  background: var(--export-hover);
+}
+
+.glm-btn--print {
+  background: var(--print);
+  color: #fff;
+}
+
+.glm-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.glm-btn--ghost {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: #374151;
+}
+
+.glm-btn--outline {
+  background: #fff;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+}
+
+.glm-table-wrap {
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.glm-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+}
+
+.glm-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: var(--muted);
+  padding: 0.9rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fff;
+}
+
+.glm-table th svg {
+  display: inline-block;
+  vertical-align: -1px;
+  color: #9ca3af;
+}
+
+.glm-table td {
+  padding: 0.95rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #eef0f2;
+  vertical-align: middle;
+}
+
+.glm-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.glm-table tbody tr:hover td {
+  background: #f3f4f6;
+}
+
+.glm-row-actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  color: #93c5fd;
+}
+
+.glm-row-actions button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 550;
+  color: var(--blue);
+  cursor: pointer;
+}
+
+.glm-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.glm-edit svg {
+  color: var(--blue);
+}
+
+.glm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.glm-modal {
+  width: min(620px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  padding: 1.25rem 1.4rem 1.25rem;
+}
+
+.glm-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.glm-modal-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.glm-modal-sub {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.glm-modal-close {
+  border: none;
+  background: none;
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+}
+
+.glm-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.95rem 1.1rem;
+}
+
+.glm-fdrop {
+  width: 100%;
+}
+
+.glm-fdrop-trigger {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+}
+
+.glm-fdrop-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.glm-fdrop-trigger svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.glm-toggle-field {
+  justify-content: flex-start;
+}
+
+.glm-toggle {
+  width: 44px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: #d1d5db;
+  padding: 2px;
+  cursor: pointer;
+  margin-top: 0.15rem;
+}
+
+.glm-toggle span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.glm-toggle.is-on {
+  background: var(--blue);
+}
+
+.glm-toggle.is-on span {
+  transform: translateX(20px);
+}
+
+.glm-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.35rem;
+  gap: 0.75rem;
+}
+
+.glm-modal-foot-right {
+  display: flex;
+  gap: 0.55rem;
+}
+
+@media (max-width: 720px) {
+  .glm-filters,
+  .glm-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .glm-modal-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .glm-modal-foot-right {
+    flex-direction: column;
+  }
+}
