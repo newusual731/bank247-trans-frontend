@@ -1,0 +1,90 @@
+.tcm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.tcm {
+  width: min(440px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.35rem 1.35rem 1.15rem;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.tcm-x {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.tcm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fdba74 0 42%, #ffedd5 43% 70%, #fff7ed 71% 100%);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 0.85rem;
+}
+
+.tcm h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: #1a1f36;
+}
+
+.tcm p {
+  margin: 0 0 1rem;
+  color: #4f566b;
+  font-size: 0.9rem;
+}
+
+.tcm hr {
+  border: none;
+  border-top: 1px solid #e3e8ee;
+  margin: 0 0 0.95rem;
+}
+
+.tcm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.tcm-yes,
+.tcm-no {
+  height: 38px;
+  min-width: 72px;
+  padding: 0 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.tcm-yes {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #1a1f36;
+}
+
+.tcm-no {
+  background: #d92d20;
+  border: none;
+  color: #fff;
+}

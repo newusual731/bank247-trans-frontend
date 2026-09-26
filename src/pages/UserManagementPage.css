@@ -124,6 +124,12 @@
   color: var(--blue-mid);
 }
 
+.um-settings-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .um-role-link {
   color: var(--blue-mid);
   font-size: 0.85rem;

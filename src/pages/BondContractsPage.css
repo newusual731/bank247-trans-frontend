@@ -210,6 +210,35 @@
   overflow: hidden;
 }
 
+.bond-modal--tbill {
+  width: min(100%, 680px);
+  max-height: min(94vh, 900px);
+}
+
+.bond-modal-section {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bond-date {
+  position: relative;
+}
+
+.bond-date svg {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.bond-date input {
+  padding-left: 2rem;
+}
+
 .bond-modal-head {
   display: flex;
   align-items: center;

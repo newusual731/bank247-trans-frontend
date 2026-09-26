@@ -1,0 +1,375 @@
+.lc {
+  --blue: #2563eb;
+  --blue-deep: #1d4ed8;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --text: #111827;
+  --status: #0f766e;
+  --danger: #dc2626;
+}
+
+.lc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lc-head h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.lc-add {
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lc-add:hover {
+  background: var(--blue-deep);
+}
+
+.lc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-top: 0.35rem;
+}
+
+.lc-filter-btn,
+.lc-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 550;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.lc-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 360px);
+  height: 38px;
+  padding: 0 0.85rem;
+  margin-bottom: 0.85rem;
+  border-radius: 8px;
+  background: #eceef2;
+  color: #9ca3af;
+}
+
+.lc-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.lc-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.lc-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+}
+
+.lc-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 550;
+  color: #6b7280;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: #fafafa;
+  white-space: nowrap;
+}
+
+.lc-table td {
+  padding: 0.85rem 0.9rem;
+  font-size: 0.8rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  white-space: nowrap;
+}
+
+.lc-table tbody tr:nth-child(even) td {
+  background: #fcfcfd;
+}
+
+.lc-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.lc-status {
+  font-weight: 600;
+}
+
+.lc-status.is-issued {
+  color: var(--status);
+}
+
+.lc-status.is-closed {
+  color: #4b5563;
+}
+
+.lc-status.is-cancelled {
+  color: var(--danger);
+}
+
+.lc-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lc-actions button {
+  border: none;
+  background: transparent;
+  color: var(--blue);
+  font-size: 0.78rem;
+  font-weight: 550;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lc-actions button.is-danger {
+  color: var(--danger);
+}
+
+.lc-actions span {
+  color: var(--blue);
+  opacity: 0.55;
+}
+
+/* Modal */
+.lc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(17, 24, 39, 0.28);
+  backdrop-filter: blur(1.5px);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.lc-modal {
+  width: min(100%, 680px);
+  max-height: min(94vh, 900px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lc-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.25rem 0.85rem;
+}
+
+.lc-modal-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lc-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.lc-modal-body {
+  padding: 0 1.25rem 0.5rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lc-modal-section {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lc-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.lc-modal-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.lc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.lc-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.lc-field input,
+.lc-field textarea,
+.lc-select select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.lc-field input {
+  height: 38px;
+}
+
+.lc-field textarea {
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  min-height: 96px;
+}
+
+.lc-select {
+  position: relative;
+}
+
+.lc-select select {
+  height: 38px;
+  appearance: none;
+  padding-right: 1.9rem;
+}
+
+.lc-select svg {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.lc-date {
+  position: relative;
+}
+
+.lc-date svg {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.lc-date input {
+  padding-left: 2rem;
+  height: 38px;
+}
+
+.lc-field input:focus,
+.lc-field textarea:focus,
+.lc-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.lc-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 1.25rem 1.2rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.lc-modal-foot-left {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.lc-btn-ghost {
+  height: 36px;
+  padding: 0 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #111827;
+  font-size: 0.8rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.lc-btn-primary {
+  height: 36px;
+  padding: 0 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.lc-btn-primary:hover {
+  background: var(--blue-deep);
+}
+
+@media (max-width: 720px) {
+  .lc-head {
+    flex-direction: column;
+  }
+
+  .lc-modal-grid,
+  .lc-modal-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .lc-modal-foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

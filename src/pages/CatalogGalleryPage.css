@@ -1,0 +1,128 @@
+.cgal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.cgal-head h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.45rem;
+  font-weight: 750;
+}
+
+.cgal-head p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+.cgal-back {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cgal-demo {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1rem 1.15rem 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.cgal-demo h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+}
+
+.cgal-demo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.cgal-chev-demo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 42px;
+  color: #6b7280;
+  font-size: 0.84rem;
+}
+
+.cgal-amount {
+  height: 42px;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 0.85rem;
+  font: inherit;
+}
+
+.cgal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.cgal-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 0.95rem 1rem 1.1rem;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.cgal-card header {
+  margin-bottom: 0.85rem;
+}
+
+.cgal-card h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.cgal-card code {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  word-break: break-all;
+}
+
+.cgal-body {
+  overflow: auto;
+}
+
+.cgal-form-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.cgal-form-note a {
+  color: #2563eb;
+}
+
+.cgal-empty {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+.cgal-hr {
+  border: none;
+  height: 2px;
+  background: #111;
+  width: 120px;
+}
+
+@media (max-width: 900px) {
+  .cgal-demo-grid {
+    grid-template-columns: 1fr;
+  }
+}

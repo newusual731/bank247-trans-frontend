@@ -6,7 +6,8 @@ const TABS = [
   { to: "/gl/chart", label: "Chart of Accounts" },
   { to: "/gl/creation", label: "GL Creation" },
   { to: "/gl/mapping", label: "GL Mapping" },
-  { to: "/gl/pnl-entry", label: "P&L Entry" },
+  { to: "/reports/trial-balance", label: "Trial Balance" },
+  { to: "/reports/journal", label: "Journal Report" },
   { to: "/reports/general-ledger", label: "GL Report" },
   { to: "/reports/pnl", label: "P&L Report" },
 ] as const;

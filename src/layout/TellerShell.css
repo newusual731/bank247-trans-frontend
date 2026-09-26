@@ -1,0 +1,258 @@
+.tshell {
+  --orange: #ea580c;
+  --active-bg: #fff0ee;
+  --active-text: #ea580c;
+  --bg: #f5f6f8;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e8eaed;
+
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+.tshell-sidebar {
+  background: #fafafa;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 0.75rem 0.9rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.tshell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  overflow: auto;
+}
+
+.tshell-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.72rem 0.85rem;
+  border-radius: 10px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.tshell-nav-item:hover {
+  background: #f9fafb;
+}
+
+.tshell-nav-item.is-active {
+  background: var(--active-bg);
+  color: var(--active-text);
+  font-weight: 650;
+}
+
+.tshell-nav-item.is-active .tshell-nav-icon {
+  color: var(--active-text);
+}
+
+.tshell-nav-icon {
+  display: grid;
+  place-items: center;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.tshell-foot {
+  border-top: 1px solid #f1f2f4;
+  padding-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tshell-user {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.25rem;
+}
+
+.tshell-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.45rem;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.tshell-user-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tshell-avatar {
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.tshell-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.tshell-user-meta strong {
+  font-size: 0.82rem;
+}
+
+.tshell-user-meta span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.tshell-logout {
+  border: none;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.tshell-main {
+  min-width: 0;
+}
+
+.tshell-content {
+  padding: 1.15rem 1.25rem 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .tshell {
+    grid-template-columns: 1fr;
+  }
+
+  .tshell-topbar {
+    display: flex;
+  }
+
+  .tshell-menu-btn {
+    display: inline-flex;
+  }
+
+  .tshell-nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    border: none;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+  }
+
+  .tshell-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    width: min(280px, 86vw);
+    height: 100vh;
+    transform: translateX(-105%);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 8px 0 32px rgba(15, 23, 42, 0.12);
+    overflow-y: auto;
+  }
+
+  .tshell.is-nav-open .tshell-sidebar {
+    transform: translateX(0);
+  }
+
+  .tshell-sidebar-top {
+    display: flex;
+  }
+
+  .tshell-nav-close {
+    display: inline-flex;
+  }
+
+  .tshell-content {
+    padding: 0.85rem 1rem 1.35rem;
+  }
+}
+
+.tshell-sidebar-top {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem 0.75rem;
+}
+
+.tshell-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.tshell-topbar {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 0;
+}
+
+.tshell-topbar-title {
+  font-weight: 650;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.tshell-menu-btn,
+.tshell-nav-close,
+.tshell-nav-scrim {
+  display: none;
+}
+
+.tshell-menu-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #374151;
+}
+
+.tshell-nav-close {
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.tshell-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

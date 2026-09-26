@@ -1,0 +1,359 @@
+.tbr {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0d9488;
+  --export-hover: #0f766e;
+  --print: #3f51b5;
+  --print-hover: #3949ab;
+  --ledger: #16a34a;
+  --ledger-hover: #15803d;
+  --debit-bg: #fee2e2;
+  --debit-text: #991b1b;
+  --credit-bg: #dcfce7;
+  --credit-text: #166534;
+}
+
+.tbr-report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.tbr-report-tabs a {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid transparent;
+}
+
+.tbr-report-tabs a.is-active,
+.tbr-report-tabs a:hover {
+  color: #2563eb;
+}
+
+.tbr-report-tabs a.is-active {
+  border-bottom-color: #2563eb;
+  font-weight: 650;
+}
+
+.tbr-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.tbr h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.tbr-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.55fr) repeat(5, minmax(0, 1fr));
+  gap: 0.75rem 0.55rem;
+  margin-bottom: 0.85rem;
+  align-items: end;
+}
+
+.tbr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.tbr-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.tbr-range {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.tbr-range-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.tbr-range input,
+.tbr-select select,
+.tbr-date input {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.tbr-range input {
+  width: 8.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.tbr-select,
+.tbr-date {
+  position: relative;
+}
+
+.tbr-select select {
+  width: 100%;
+  appearance: none;
+  padding-right: 1.7rem;
+}
+
+.tbr-select svg {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.tbr-date input {
+  width: 100%;
+  padding-right: 2rem;
+}
+
+.tbr-date svg {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.tbr-range input:focus,
+.tbr-select select:focus,
+.tbr-date input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tbr-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+  align-items: center;
+}
+
+.tbr-actions .export-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--export);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tbr-actions .export-menu-trigger:hover {
+  background: var(--export-hover);
+}
+
+.tbr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tbr-btn--print {
+  background: var(--print);
+}
+
+.tbr-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.tbr-btn--ledger {
+  background: var(--ledger);
+}
+
+.tbr-btn--ledger:hover {
+  background: var(--ledger-hover);
+}
+
+.tbr-table-wrap {
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 360px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.tbr-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+}
+
+.tbr-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fafafa;
+  vertical-align: middle;
+}
+
+.tbr-th {
+  display: inline-block;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.tbr-th--debit {
+  background: var(--debit-bg);
+  color: var(--debit-text);
+}
+
+.tbr-th--credit {
+  background: var(--credit-bg);
+  color: var(--credit-text);
+}
+
+.tbr-table td {
+  padding: 0.85rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #374151;
+  border-bottom: 1px solid #eef0f2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tbr-debit {
+  color: var(--debit-text);
+  font-weight: 600;
+}
+
+.tbr-credit {
+  color: var(--credit-text);
+  font-weight: 600;
+}
+
+.tbr-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.tbr-total td {
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 1.05rem;
+  padding-bottom: 1.05rem;
+  background: #fff !important;
+}
+
+.tbr-signoff {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 220px));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  align-items: end;
+}
+
+.tbr-hint {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.tbr-hint a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.tbr-hint a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1280px) {
+  .tbr-filters {
+    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .tbr-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tbr-field--range {
+    grid-column: 1 / -1;
+  }
+
+  .tbr-range {
+    flex-wrap: wrap;
+  }
+
+  .tbr-title-row {
+    flex-direction: column;
+  }
+
+  .tbr-signoff {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tbr-table tbody tr {
+  cursor: pointer;
+}
+.tbr-table tbody tr.is-selected {
+  background: #eff6ff;
+}
+.tbr-table tbody tr.tbr-total {
+  cursor: default;
+}
+.tbr-row-ledger {
+  border: none;
+  background: none;
+  color: #1a56be;
+  font-weight: 650;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+.tbr-row-ledger:hover {
+  text-decoration: underline;
+}

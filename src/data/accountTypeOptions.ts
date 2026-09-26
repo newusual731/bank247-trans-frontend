@@ -48,9 +48,10 @@ export type PartyScope = (typeof PARTY_SCOPES)[number];
 /** Contract type on create forms (Customer vs Internal only — no All). */
 export const CONTRACT_PARTY_TYPES = ["Customer", "Internal"] as const;
 
-export const BRANCH_CODES = ["EKO001", "LOS002", "ABJ001"] as const;
+export const BRANCH_CODES = ["EKO001", "PHC002", "ABJ003", "IBD004", "ENU005", "KAN8006"] as const;
+/** Prefer CURRENCY_DROPDOWN from catalogs.ts for full list; keep short form for existing filters. */
 export const CURRENCIES = ["Usd", "Ngn", "Eur"] as const;
-export const COST_CENTERS = ["CC01", "CC02", "CC03"] as const;
+export const COST_CENTERS = ["CC01", "CC02", "CC03", "CC05", "CC06", "CC07", "CC08", "CC09"] as const;
 export const ACCOUNT_STATUSES = ["Active", "Dormant", "Closed"] as const;
 
 /** GL CATEGORY.png */
@@ -73,17 +74,30 @@ export const GL_CODE_OPTIONS = [
   "10005- Suspense Account",
 ] as const;
 
-/** Account class on GL Creation (sample values from frame) */
+/** Account class on GL Creation — ACCOUNT CLASS.png */
 export const GL_ACCOUNT_CLASSES_DETAIL = [
-  "Current Asset",
-  "Non-Current Asset",
-  "Current Liability",
-  "Equity",
-  "Income",
-  "Expense",
+  "Current -Asset -",
+  "Fixed Asset",
+  "Long Term Liability",
+  "Revenue",
+  "Operating Expense",
 ] as const;
 
-export const BRANCH_NAMES = ["Victoria Island", "Ikeja", "Abuja Central"] as const;
-export const POSTING_STATUSES = ["Posted", "Pending", "Reversed"] as const;
-export const TXN_CODES = ["DEP1001", "WDL1002", "TRF1003", "T0004"] as const;
+export const BRANCH_NAMES = ["Victoria Island", "Ogba", "Ikeja", "Surulere", "Ajah"] as const;
+export const POSTING_STATUSES = ["Posted", "Reversed", "Pending"] as const;
+export const TXN_CODES = ["DEP1001", "DEP1002", "DEP1003", "DEP104", "DEP1005"] as const;
+
+/** PRODUCT TYPE.png */
+export const PRODUCT_SETUP_TYPES = [
+  "Fixed Deposit",
+  "Treasury Bill",
+  "Loan",
+  "Bond",
+  "Forex",
+] as const;
+
+/** Term options on Add New Product (MODAL.png) */
+export const PRODUCT_TERMS = ["30 Days", "90 Days", "182 Days", "12 months", "30 Months"] as const;
+
+export const PRODUCT_SETUP_STATUSES = ["Active", "Inactive"] as const;
 

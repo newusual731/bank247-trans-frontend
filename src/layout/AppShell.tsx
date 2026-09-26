@@ -1,23 +1,61 @@
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { AnimatedOutlet } from "../components/AnimatedOutlet";
+import { useProfileAvatar } from "../hooks/useProfileAvatar";
 import "./AppShell.css";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: "dash" },
   { to: "/accounts", label: "Accounts", icon: "accounts" },
-  { to: "/transactions", label: "Transactions", icon: "tx" },
+  { to: "/transactions", label: "Transactions", icon: "tx", matchPrefix: "/transactions" },
   { to: "/gl", label: "General Ledger", icon: "gl" },
   { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
-  { to: "/reports/audit-trail", label: "Reports", icon: "reports", matchPrefix: "/reports" },
+  { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
+  { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller" },
   { to: "/settings/users", label: "Settings", icon: "settings", matchPrefix: "/settings" },
 ] as const;
 
 export function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [navOpen, setNavOpen] = useState(false);
+  const { avatarUrl } = useProfileAvatar();
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
 
   return (
-    <div className="shell">
-      <aside className="shell-sidebar">
+    <div className={`shell${navOpen ? " is-nav-open" : ""}`}>
+      {navOpen ? (
+        <button
+          type="button"
+          className="shell-nav-scrim"
+          aria-label="Close menu"
+          onClick={() => setNavOpen(false)}
+        />
+      ) : null}
+      <aside className="shell-sidebar" id="shell-sidebar">
+        <div className="shell-sidebar-top">
+          <strong className="shell-brand">Bank247</strong>
+          <button
+            type="button"
+            className="shell-nav-close"
+            aria-label="Close menu"
+            onClick={() => setNavOpen(false)}
+          >
+            ×
+          </button>
+        </div>
         <nav className="shell-nav" aria-label="Main">
           {NAV.map((item) => {
             const prefixActive =
@@ -53,11 +91,20 @@ export function AppShell() {
           </NavLink>
 
           <div className="shell-user">
-            <div className="shell-avatar" aria-hidden />
-            <div className="shell-user-meta">
-              <strong>User&apos;s Name</strong>
-              <span>Owner</span>
-            </div>
+            <button
+              type="button"
+              className="shell-user-btn"
+              onClick={() => navigate("/profile")}
+              aria-label="Open profile"
+            >
+              <div className="shell-avatar" aria-hidden>
+                {avatarUrl ? <img src={avatarUrl} alt="" /> : null}
+              </div>
+              <div className="shell-user-meta">
+                <strong>Sam Kola</strong>
+                <span>Owner</span>
+              </div>
+            </button>
             <button
               type="button"
               className="shell-logout"
@@ -72,28 +119,55 @@ export function AppShell() {
 
       <div className="shell-main">
         <header className="shell-topbar">
+          <button
+            type="button"
+            className="shell-menu-btn"
+            aria-label="Open menu"
+            aria-expanded={navOpen}
+            aria-controls="shell-sidebar"
+            onClick={() => setNavOpen(true)}
+          >
+            <MenuIcon />
+          </button>
           <label className="shell-search">
             <SearchIcon />
             <input type="search" placeholder="Search..." />
           </label>
           <div className="shell-top-actions">
-            <button type="button" className="shell-icon-btn" aria-label="Notifications">
+            <button
+              type="button"
+              className="shell-icon-btn"
+              aria-label="Notifications"
+              onClick={() => navigate("/notifications")}
+            >
               <BellOutlineIcon />
             </button>
-            <button type="button" className="shell-icon-btn" aria-label="Messages">
+            <button type="button" className="shell-icon-btn" aria-label="Messages" onClick={() => navigate("/notifications")}>
               <MailIcon />
             </button>
-            <button type="button" className="shell-user-menu">
-              User
+            <button
+              type="button"
+              className="shell-user-menu"
+              onClick={() => navigate("/profile")}
+            >
+              Sam Kola
               <ChevronIcon />
             </button>
           </div>
         </header>
         <div className="shell-content">
-          <Outlet />
+          <AnimatedOutlet />
         </div>
       </div>
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 

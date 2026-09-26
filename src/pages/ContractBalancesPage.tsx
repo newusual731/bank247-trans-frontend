@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
 import { FilterDropdown } from "../components/FilterDropdown";
+import { ContractTypeTabs } from "../components/ContractTypeTabs";
 import {
   CONTRACT_PARTY_TYPES,
   INSTRUMENT_PRODUCT_CODES,
@@ -19,6 +19,7 @@ import {
   YES_NO,
 } from "../data/filterDropdownOptions";
 import "./ContractBalancesPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
 
 type BalanceRow = {
   id: string;
@@ -106,15 +107,6 @@ const EXPOSURE_ROWS = Array.from({ length: 5 }, () => ({
   closing: "+3000",
 }));
 
-const CONTRACT_TABS = [
-  { to: "/contracts/balances", label: "Contract Balances" },
-  { to: "/contracts/loans", label: "Loan Contracts" },
-  { to: "/contracts/treasury-bills", label: "Treasury Bill" },
-  { to: "/contracts/bonds", label: "Bond Contracts" },
-  { to: "/contracts/forex", label: "Forex Contracts" },
-  { to: "/contracts/lc", label: "Letters of Credit" },
-] as const;
-
 export function ContractBalancesPage() {
   const [partyMode, setPartyMode] = useState<PartyScope>("All");
   const [productType, setProductType] = useState<string>(CONTRACT_PRODUCT_FILTERS[0]);
@@ -124,6 +116,7 @@ export function ContractBalancesPage() {
   const [sortAction, setSortAction] = useState<string>(TABLE_OVERFLOW_ACTIONS[1]);
   const [addOpen, setAddOpen] = useState(false);
   const [reverseOpen, setReverseOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const rows = useMemo(() => {
     const source =
@@ -167,30 +160,9 @@ export function ContractBalancesPage() {
     <div className="cbal">
       <header className="cbal-banner">
         <h1>Contract Balances</h1>
-        <div className="cbal-banner-actions">
-          <button type="button" className="cbal-icon-circle" aria-label="Notifications">
-            <BellIcon />
-          </button>
-          <button type="button" className="cbal-icon-circle" aria-label="Messages">
-            <MailIcon />
-          </button>
-          <button type="button" className="cbal-user-chip">
-            User <ChevronDown />
-          </button>
-        </div>
       </header>
 
-      <nav className="cbal-tabs" aria-label="Contract modules">
-        {CONTRACT_TABS.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            className={({ isActive }) => (isActive ? "is-active" : undefined)}
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
+      <ContractTypeTabs />
 
       <div className="cbal-filters">
         <div className="cbal-field">
@@ -386,7 +358,7 @@ export function ContractBalancesPage() {
           <div className="cbal-card cbal-line-card">
             <div className="cbal-line-head">
               <h3>Line</h3>
-              <button type="button">MORE</button>
+              <button type="button" onClick={() => setMoreOpen(true)}>MORE</button>
             </div>
             <LineTrendChart />
             <div className="cbal-legend">
@@ -403,6 +375,17 @@ export function ContractBalancesPage() {
 
       {addOpen ? <AddContractModal onClose={() => setAddOpen(false)} /> : null}
       {reverseOpen ? <ReverseContractModal onClose={() => setReverseOpen(false)} /> : null}
+      {moreOpen ? (
+        <ViewDetailsModal
+          title="Balance Trend Detail"
+          fields={[
+            { label: "Series", value: "Bond / All" },
+            { label: "Period", value: "2023 – 2024" },
+            { label: "Note", value: "Expanded chart options and export will connect to reporting." },
+          ]}
+          onClose={() => setMoreOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -694,7 +677,7 @@ function AddContractModal({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <div className="cbal-modal-foot-right">
-            <button type="button" className="cbal-btn-outline">
+            <button type="button" className="cbal-btn-outline" onClick={() => window.alert("Closed")}>
               Post
             </button>
             <button type="button" className="cbal-btn-solid" onClick={onClose}>
@@ -858,23 +841,4 @@ function FilterIcon() {
   );
 }
 
-function BellIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M6 9.5a6 6 0 1112 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13.5 6 9.5z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-    </svg>
-  );
-}
 
-function MailIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3.5" y="5.5" width="17" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}

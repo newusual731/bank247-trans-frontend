@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { GlModuleTabs } from "../components/GlModuleTabs";
+import { ExportMenu, SuccessModal } from "../components/SharedUiBits";
 import {
   BRANCH_CODES,
   COST_CENTERS,
   CURRENCIES,
   GL_ACCOUNT_CLASSES,
 } from "../data/accountTypeOptions";
+import { AddEntryModal, ReverseEntryModal } from "./GlEntryModals";
 import "./GeneralLedgerPage.css";
 
 type LedgerRow = {
@@ -39,11 +41,26 @@ export function GeneralLedgerPage() {
   const [costCenter, setCostCenter] = useState<string>(COST_CENTERS[0]);
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
   const [branch, setBranch] = useState<string>(BRANCH_CODES[0]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [reverseOpen, setReverseOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successTitle, setSuccessTitle] = useState("Entry Submitted successfully created!");
 
   return (
     <div className="gl">
       <GlModuleTabs />
-      <h1>General Ledger</h1>
+      <div className="gl-head">
+        <h1>General Ledger</h1>
+        <div className="gl-toolbar">
+          <button type="button" className="gl-btn gl-btn--add" onClick={() => setAddOpen(true)}>
+            + Add Entry
+          </button>
+          <button type="button" className="gl-btn gl-btn--reverse" onClick={() => setReverseOpen(true)}>
+            Reverse
+          </button>
+          <ExportMenu />
+        </div>
+      </div>
 
       <div className="gl-filters">
         <div className="gl-field gl-field--range">
@@ -137,6 +154,28 @@ export function GeneralLedgerPage() {
           </tbody>
         </table>
       </div>
+
+      {addOpen ? (
+        <AddEntryModal
+          onClose={() => setAddOpen(false)}
+          onPosted={() => {
+            setSuccessTitle("Entry Submitted successfully created!");
+            setSuccessOpen(true);
+          }}
+        />
+      ) : null}
+      {reverseOpen ? (
+        <ReverseEntryModal
+          onClose={() => setReverseOpen(false)}
+          onSaved={() => {
+            setSuccessTitle("Entry successfully created!");
+            setSuccessOpen(true);
+          }}
+        />
+      ) : null}
+      {successOpen ? (
+        <SuccessModal title={successTitle} onClose={() => setSuccessOpen(false)} />
+      ) : null}
     </div>
   );
 }

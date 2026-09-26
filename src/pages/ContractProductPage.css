@@ -1,0 +1,352 @@
+.cprod {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --blue: #2563eb;
+  --blue-deep: #1d4ed8;
+  --terminate: #f59e0b;
+  --terminate-hover: #d97706;
+  --edit: #4b5563;
+  --edit-hover: #374151;
+  --export: #0f9f94;
+  --export-hover: #0d8a81;
+  --preview: #4659a7;
+  --preview-hover: #3b4d91;
+}
+
+.cprod h1 {
+  margin: 0 0 0.85rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.cprod-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.15rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.cprod-tabs a {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.45rem 0 0.7rem;
+  position: relative;
+}
+
+.cprod-tabs a.is-active {
+  color: var(--blue);
+  font-weight: 650;
+}
+
+.cprod-tabs a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 2px 2px 0 0;
+}
+
+.cprod-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.6fr) repeat(4, minmax(0, 1fr));
+  gap: 0.75rem 0.7rem;
+  margin-bottom: 0.95rem;
+  align-items: end;
+}
+
+.cprod-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.cprod-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.cprod-range {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.cprod-date {
+  position: relative;
+}
+
+.cprod-date svg {
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.cprod-date input,
+.cprod-select select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  outline: none;
+}
+
+.cprod-date input {
+  width: 9rem;
+  padding: 0 0.5rem 0 1.9rem;
+}
+
+.cprod-select {
+  position: relative;
+}
+
+.cprod-select select {
+  width: 100%;
+  appearance: none;
+  padding: 0 1.85rem 0 0.75rem;
+}
+
+.cprod-select svg {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.cprod-date input:focus,
+.cprod-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.cprod-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.cprod-actions-left,
+.cprod-actions-right {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.cprod-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 36px;
+  padding: 0 0.9rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cprod-btn--add {
+  background: var(--blue);
+}
+
+.cprod-btn--add:hover {
+  background: var(--blue-deep);
+}
+
+.cprod-btn--terminate {
+  background: var(--terminate);
+}
+
+.cprod-btn--terminate:hover {
+  background: var(--terminate-hover);
+}
+
+.cprod-btn--edit {
+  background: var(--edit);
+}
+
+.cprod-btn--edit:hover {
+  background: var(--edit-hover);
+}
+
+.cprod-btn--export {
+  background: var(--export);
+}
+
+.cprod-btn--export:hover {
+  background: var(--export-hover);
+}
+
+.cprod-btn--preview {
+  background: var(--preview);
+}
+
+.cprod-btn--preview:hover {
+  background: var(--preview-hover);
+}
+
+.cprod-table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.cprod-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1280px;
+}
+
+.cprod-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4b5563;
+  padding: 0.85rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fff;
+}
+
+.cprod-table td {
+  padding: 0.85rem 0.65rem;
+  font-size: 0.78rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f2f4;
+  white-space: nowrap;
+}
+
+.cprod-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.cprod-table tbody tr:hover td {
+  background: #f3f4f6;
+}
+
+.cprod-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #93c5fd;
+}
+
+.cprod-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 550;
+  color: var(--blue);
+  cursor: pointer;
+}
+
+.cprod-row-actions svg {
+  color: var(--blue);
+}
+
+@media (max-width: 1100px) {
+  .cprod-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .cprod-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.cprod-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+.cprod-modal {
+  width: min(640px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  padding: 1.35rem 1.5rem 1.3rem;
+}
+.cprod-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.cprod-modal-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.cprod-modal-close {
+  border: none;
+  background: none;
+  font-size: 1.4rem;
+  color: #9ca3af;
+  cursor: pointer;
+}
+.cprod-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem 1.1rem;
+}
+.cprod-modal-grid label {
+  display: grid;
+  gap: 0.35rem;
+}
+.cprod-modal-grid span {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.cprod-modal-grid input {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+.cprod-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}

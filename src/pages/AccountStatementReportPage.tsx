@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { CUSTOMER_ACCOUNT_TYPES, CURRENCIES } from "../data/accountTypeOptions";
 import "./AccountStatementReportPage.css";
+import { ReportTabs } from "../components/ReportTabs";
 
 type StatementRow = {
   date: string;
@@ -37,14 +37,7 @@ export function AccountStatementReportPage() {
 
   return (
     <div className="asr">
-      <div className="asr-report-tabs">
-        <Link to="/reports/account-statement" className="is-active">
-          Account Statement
-        </Link>
-        <Link to="/reports/audit-trail">Audit Trail</Link>
-        <Link to="/reports/general-ledger">General Ledger</Link>
-        <Link to="/reports/pnl">Profit & Loss</Link>
-      </div>
+      <ReportTabs active="asr" />
 
       <h1>Account Statement Report</h1>
 
@@ -129,11 +122,11 @@ export function AccountStatementReportPage() {
       </div>
 
       <div className="asr-actions">
-        <button type="button" className="asr-btn asr-btn--export">
+        <button type="button" className="asr-btn asr-btn--export" onClick={() => window.print()}>
           <ExportIcon />
           Export
         </button>
-        <button type="button" className="asr-btn asr-btn--print">
+        <button type="button" className="asr-btn asr-btn--print" onClick={() => window.print()}>
           <PrintIcon />
           Print
         </button>

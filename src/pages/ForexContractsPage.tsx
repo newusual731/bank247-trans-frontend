@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
 import { FilterDropdown } from "../components/FilterDropdown";
+import { ContractTypeTabs } from "../components/ContractTypeTabs";
 import {
   CONTRACT_PRODUCT_FILTERS,
   CURRENCY_CODES,
@@ -10,6 +10,8 @@ import {
   TABLE_OVERFLOW_ACTIONS,
 } from "../data/filterDropdownOptions";
 import "./ForexContractsPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
+import { ConfirmActionModal } from "../components/feedback/ConfirmActionModal";
 
 type ForexRow = {
   id: string;
@@ -22,16 +24,6 @@ type ForexRow = {
   settlementDate: string;
   status: string;
 };
-
-const CONTRACT_TABS = [
-  { to: "/contracts/balances", label: "Contract Balances" },
-  { to: "/contracts/loans", label: "Loan Contracts" },
-  { to: "/contracts/treasury-bills", label: "Treasury Bill" },
-  { to: "/contracts/bonds", label: "Bond Contracts" },
-  { to: "/contracts/forex", label: "Forex Contracts" },
-  { to: "/contracts/lc", label: "Letters of Credit" },
-  { to: "/gl/chart", label: "Chart of Accounts" },
-] as const;
 
 const ROWS: ForexRow[] = [
   {
@@ -84,7 +76,13 @@ export function ForexContractsPage() {
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(CONTRACT_PRODUCT_FILTERS[0]);
   const [tableAction, setTableAction] = useState<string>(TABLE_OVERFLOW_ACTIONS[1]);
-  const [modalOpen, setModalOpen] = useState(false);
+  type ModalState =
+    | { kind: "add" }
+    | { kind: "view"; row: ForexRow }
+    | { kind: "rebook"; row: ForexRow }
+    | { kind: "cancel"; row: ForexRow }
+    | null;
+  const [modal, setModal] = useState<ModalState>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -123,7 +121,7 @@ export function ForexContractsPage() {
       <div className="forex-head">
         <div>
           <h1>FOREX CONTRACTS</h1>
-          <button type="button" className="forex-add" onClick={() => setModalOpen(true)}>
+          <button type="button" className="forex-add" onClick={() => setModal({ kind: "add" })}>
             +Add New Contract
           </button>
         </div>
@@ -166,17 +164,7 @@ export function ForexContractsPage() {
         </div>
       </div>
 
-      <nav className="forex-tabs" aria-label="Contract types">
-        {CONTRACT_TABS.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            className={({ isActive }) => (isActive ? "is-active" : undefined)}
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
+      <ContractTypeTabs />
 
       <label className="forex-search">
         <SearchIcon />
@@ -220,13 +208,11 @@ export function ForexContractsPage() {
                 </td>
                 <td>
                   <div className="forex-actions">
-                    <button type="button">View</button>
+                    <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
                     <span aria-hidden>·</span>
-                    <button type="button">Rebook</button>
+                    <button type="button" onClick={() => setModal({ kind: "rebook", row })}>Rebook</button>
                     <span aria-hidden>·</span>
-                    <button type="button" className="is-danger">
-                      Cancel
-                    </button>
+                    <button type="button" className="is-danger" onClick={() => setModal({ kind: "cancel", row })}>Cancel</button>
                   </div>
                 </td>
               </tr>
@@ -235,20 +221,59 @@ export function ForexContractsPage() {
         </table>
       </div>
 
-      {modalOpen ? <AddForexModal onClose={() => setModalOpen(false)} /> : null}
+      {modal?.kind === "add" || modal?.kind === "rebook" ? (
+        <AddForexModal
+          onClose={() => setModal(null)}
+          initial={modal.kind === "rebook" ? modal.row : undefined}
+          mode={modal.kind === "rebook" ? "rebook" : "add"}
+        />
+      ) : null}
+      {modal?.kind === "view" ? (
+        <ViewDetailsModal
+          title="View Forex Contract"
+          fields={[
+            { label: "FX Contract ID", value: modal.row.id },
+            { label: "Base Currency", value: modal.row.baseCurrency },
+            { label: "Counter Currency", value: modal.row.counterCurrency },
+            { label: "Amount", value: modal.row.amount },
+            { label: "Rate", value: modal.row.rate },
+            { label: "Counterparty", value: modal.row.counterparty },
+            { label: "Trade Date", value: modal.row.tradeDate, date: true },
+            { label: "Settlement Date", value: modal.row.settlementDate, date: true },
+            { label: "Status", value: modal.row.status },
+          ]}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+      {modal?.kind === "cancel" ? (
+        <ConfirmActionModal
+          title="Cancel Contract ?"
+          message={`Do you want to cancel ${modal.row.id}?`}
+          onConfirm={() => setModal(null)}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function AddForexModal({ onClose }: { onClose: () => void }) {
-  const [fxId, setFxId] = useState("FX2025-005");
-  const [notional, setNotional] = useState("1,000,000");
-  const [baseCurrency, setBaseCurrency] = useState<string>(CURRENCY_CODES[0]);
-  const [counterCurrency, setCounterCurrency] = useState<string>(CURRENCY_CODES[1]);
-  const [counterparty, setCounterparty] = useState<string>(ISSUER_TYPES[0]);
-  const [rate, setRate] = useState("1475.25");
-  const [tradeDate, setTradeDate] = useState("2025-06-15");
-  const [settlementDate, setSettlementDate] = useState("2025-06-15");
+function AddForexModal({
+  onClose,
+  initial,
+  mode = "add",
+}: {
+  onClose: () => void;
+  initial?: { id: string; amount: string; baseCurrency: string; counterCurrency: string; counterparty: string; rate: string; tradeDate: string; settlementDate: string };
+  mode?: "add" | "rebook";
+}) {
+  const [fxId, setFxId] = useState(initial?.id ?? "FX2025-005");
+  const [notional, setNotional] = useState(initial?.amount?.replace("₦", "").replace(/,/g, "") ?? "1,000,000");
+  const [baseCurrency, setBaseCurrency] = useState<string>(initial?.baseCurrency ?? CURRENCY_CODES[0]);
+  const [counterCurrency, setCounterCurrency] = useState<string>(initial?.counterCurrency ?? CURRENCY_CODES[1]);
+  const [counterparty, setCounterparty] = useState<string>(initial?.counterparty ?? ISSUER_TYPES[0]);
+  const [rate, setRate] = useState(initial?.rate ?? "1475.25");
+  const [tradeDate, setTradeDate] = useState(initial?.tradeDate ? initial.tradeDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2") : "2025-06-15");
+  const [settlementDate, setSettlementDate] = useState(initial?.settlementDate ? initial.settlementDate.replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2") : "2025-06-15");
   const [debitGl, setDebitGl] = useState<string>(PRINCIPAL_GL_UNIQUE[0]);
   const [creditGl, setCreditGl] = useState<string>(INTEREST_GL_UNIQUE[0]);
 
@@ -262,7 +287,7 @@ function AddForexModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="forex-modal-head">
-          <h2 id="add-forex-title">Add New Forex Contract</h2>
+          <h2 id="add-forex-title">{mode === "rebook" ? "Rebook Forex Contract" : "Add New Forex Contract"}</h2>
           <button type="button" className="forex-modal-close" aria-label="Close" onClick={onClose}>
             ×
           </button>
@@ -405,7 +430,7 @@ function AddForexModal({ onClose }: { onClose: () => void }) {
             <button type="button" className="forex-btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className="forex-btn-ghost">
+            <button type="button" className="forex-btn-ghost" onClick={() => window.alert("Closed")}>
               Save Draft
             </button>
           </div>

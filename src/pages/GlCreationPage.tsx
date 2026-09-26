@@ -8,6 +8,7 @@ import {
   GL_CATEGORIES,
 } from "../data/accountTypeOptions";
 import "./GlCreationPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
 
 type GlRow = {
   code: string;
@@ -31,11 +32,19 @@ export function GlCreationPage() {
   const [accountType, setAccountType] = useState<string>(CUSTOMER_ACCOUNT_TYPES[0]);
   const [accountClass, setAccountClass] = useState<string>(GL_ACCOUNT_CLASSES_DETAIL[0]);
   const [category, setCategory] = useState<string>(GL_CATEGORIES[0]);
-  const [branch, setBranch] = useState("EK0001");
+  const [branch, setBranch] = useState<string>(BRANCH_CODES[0]);
   const [opening, setOpening] = useState("₦500,000.00");
   const [costCenter, setCostCenter] = useState<string>(COST_CENTERS[0]);
   const [description, setDescription] = useState("");
   const [active, setActive] = useState(true);
+  const [viewRow, setViewRow] = useState<GlRow | null>(null);
+
+  const applyRowToForm = (row: GlRow) => {
+    setCode(row.code);
+    setName(row.name);
+    setAccountType(row.accountType);
+    setActive(row.status === "Active");
+  };
 
   return (
     <div className="glc">
@@ -168,9 +177,17 @@ export function GlCreationPage() {
                 <td>{row.createdBy}</td>
                 <td>
                   <div className="glc-actions">
-                    <button type="button">View</button>
+                    <button type="button" onClick={() => setViewRow(row)}>View</button>
                     <span aria-hidden>·</span>
-                    <button type="button">Edit</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        applyRowToForm(row);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -178,6 +195,20 @@ export function GlCreationPage() {
           </tbody>
         </table>
       </div>
+
+      {viewRow ? (
+        <ViewDetailsModal
+          title="View GL Account"
+          fields={[
+            { label: "GL Code", value: viewRow.code },
+            { label: "GL Name", value: viewRow.name },
+            { label: "Account Type", value: viewRow.accountType },
+            { label: "Status", value: viewRow.status },
+            { label: "Created By", value: viewRow.createdBy },
+          ]}
+          onClose={() => setViewRow(null)}
+        />
+      ) : null}
     </div>
   );
 }

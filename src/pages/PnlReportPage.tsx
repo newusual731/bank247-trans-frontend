@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useActionFeedback } from "../components/feedback/useActionFeedback";
 import { BRANCH_CODES, COST_CENTERS, CURRENCIES } from "../data/accountTypeOptions";
 import "./PnlReportPage.css";
+import { ReportTabs } from "../components/ReportTabs";
 
 const PNL_CATEGORIES = ["Income", "Expense"] as const;
 
@@ -31,9 +33,26 @@ export function PnlReportPage() {
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
   const [branch, setBranch] = useState<string>(BRANCH_CODES[0]);
   const [costCenter, setCostCenter] = useState<string>(COST_CENTERS[0]);
+  const [generated, setGenerated] = useState(false);
+  const { showSuccess, feedbackUi } = useActionFeedback();
+
+  const rows = useMemo(() => {
+    return ROWS.filter((r) => {
+      if (category && r.category !== category) return false;
+      if (currency && r.currency !== currency) return false;
+      return true;
+    }).map((r) => ({ ...r, currency }));
+  }, [category, currency]);
+
+  const handleGenerate = () => {
+    setGenerated(true);
+    showSuccess("P&L summary generated successfully");
+  };
 
   return (
     <div className="pnr">
+      {feedbackUi}
+      <ReportTabs active="pnl" />
       <h1>Profit & Loss Report</h1>
 
       <div className="pnr-filters">
@@ -94,51 +113,55 @@ export function PnlReportPage() {
 
       <div className="pnr-actions">
         <div className="pnr-actions-left">
-          <button type="button" className="pnr-btn pnr-btn--export">
+          <button type="button" className="pnr-btn pnr-btn--export" onClick={() => window.print()}>
             <ExportIcon /> Export
           </button>
-          <button type="button" className="pnr-btn pnr-btn--print">
+          <button type="button" className="pnr-btn pnr-btn--print" onClick={() => window.print()}>
             <PrintIcon /> Print
           </button>
         </div>
-        <button type="button" className="pnr-btn pnr-btn--gen">
+        <button type="button" className="pnr-btn pnr-btn--gen" onClick={handleGenerate}>
           Generate Summary
         </button>
       </div>
 
-      <div className="pnr-table-wrap">
-        <table className="pnr-table">
-          <thead>
-            <tr>
-              <th>GL Category</th>
-              <th>GL Code</th>
-              <th>GL Name</th>
-              <th>Amount</th>
-              <th>
-                Currency <ChevronDown />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((row, i) => (
-              <tr key={i}>
-                <td>{row.category}</td>
-                <td>{row.glCode}</td>
-                <td>{row.glName}</td>
-                <td>{row.amount}</td>
-                <td>{row.currency}</td>
+      {generated ? (
+        <div className="pnr-table-wrap">
+          <table className="pnr-table">
+            <thead>
+              <tr>
+                <th>GL Category</th>
+                <th>GL Code</th>
+                <th>GL Name</th>
+                <th>Amount</th>
+                <th>
+                  Currency <ChevronDown />
+                </th>
               </tr>
-            ))}
-            <tr className="pnr-total">
-              <td>TOTAL</td>
-              <td />
-              <td className="is-net">Net Profit</td>
-              <td className="is-net">₦500,000.00</td>
-              <td />
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.category}</td>
+                  <td>{row.glCode}</td>
+                  <td>{row.glName}</td>
+                  <td>{row.amount}</td>
+                  <td>{row.currency}</td>
+                </tr>
+              ))}
+              <tr className="pnr-total">
+                <td>TOTAL</td>
+                <td />
+                <td className="is-net">Net Profit</td>
+                <td className="is-net">₦500,000.00</td>
+                <td />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="pnr-empty">Select filters and click Generate Summary.</p>
+      )}
     </div>
   );
 }

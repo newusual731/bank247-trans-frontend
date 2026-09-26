@@ -4,12 +4,47 @@
   --border: #e5e7eb;
 }
 
+.gl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.05rem;
+  flex-wrap: wrap;
+}
+
 .gl h1 {
-  margin: 0 0 1.05rem;
+  margin: 0;
   font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text);
+}
+
+.gl-toolbar {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.gl-btn {
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.gl-btn--add {
+  background: #2563eb;
+}
+
+.gl-btn--reverse {
+  background: #f97316;
 }
 
 .gl-filters {

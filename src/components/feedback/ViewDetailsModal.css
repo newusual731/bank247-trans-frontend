@@ -1,0 +1,95 @@
+.vdm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.vdm-modal {
+  width: min(480px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+  padding: 1.35rem 1.5rem 1.3rem;
+}
+
+.vdm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.vdm-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.vdm-close {
+  border: none;
+  background: none;
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vdm-list {
+  margin: 0;
+}
+
+.vdm-list > div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.75rem;
+  padding: 0.72rem 0.15rem;
+}
+
+.vdm-list dt {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.vdm-list dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.vdm-foot {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+  padding-top: 0.35rem;
+}
+
+.vdm-ok {
+  min-width: 88px;
+  border: none;
+  border-radius: 8px;
+  background: #1a56be;
+  color: #fff;
+  font-weight: 650;
+  font-size: 0.9rem;
+  padding: 0.55rem 1.25rem;
+  cursor: pointer;
+}
+
+.vdm-ok:hover {
+  filter: brightness(1.05);
+}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { ContractTypeTabs } from "../components/ContractTypeTabs";
 import { FilterDropdown } from "../components/FilterDropdown";
 import {
   CONTRACT_PRODUCT_FILTERS,
@@ -11,6 +12,8 @@ import {
   TENOR_MONTHS,
 } from "../data/filterDropdownOptions";
 import "./BondContractsPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
+import { ConfirmActionModal } from "../components/feedback/ConfirmActionModal";
 
 type ContractRow = {
   id: string;
@@ -25,24 +28,16 @@ type ContractRow = {
 type SecuritiesConfig = {
   title: string;
   modalTitle: string;
+  modalKind: "bond" | "tbill";
   defaultId: string;
   defaultCounterparty: string;
   rows: ContractRow[];
 };
 
-const CONTRACT_TABS = [
-  { to: "/contracts/balances", label: "Contract Balances" },
-  { to: "/contracts/loans", label: "Loan Contracts" },
-  { to: "/contracts/treasury-bills", label: "Treasury Bill" },
-  { to: "/contracts/bonds", label: "Bond Contracts" },
-  { to: "/contracts/forex", label: "Forex Contracts" },
-  { to: "/contracts/lc", label: "Letters of Credit" },
-  { to: "/gl/chart", label: "Chart of Accounts" },
-] as const;
-
 const BOND_CONFIG: SecuritiesConfig = {
   title: "BOND CONTRACTS",
   modalTitle: "Add New Bond Contract",
+  modalKind: "bond",
   defaultId: "BD2024-008",
   defaultCounterparty: "FGN",
   rows: [
@@ -89,7 +84,8 @@ const BOND_CONFIG: SecuritiesConfig = {
 const TBILL_CONFIG: SecuritiesConfig = {
   title: "TREASURY BILL",
   modalTitle: "Add New Treasury Bill",
-  defaultId: "TB2024-010",
+  modalKind: "tbill",
+  defaultId: "TB2024-001",
   defaultCounterparty: "CBN",
   rows: Array.from({ length: 9 }, () => ({
     id: "TB2024-001",
@@ -114,7 +110,13 @@ function SecuritiesContractsPage({ config }: { config: SecuritiesConfig }) {
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(CONTRACT_PRODUCT_FILTERS[0]);
   const [tableAction, setTableAction] = useState<string>(TABLE_OVERFLOW_ACTIONS[1]);
-  const [modalOpen, setModalOpen] = useState(false);
+  type ModalState =
+    | { kind: "add" }
+    | { kind: "view"; row: ContractRow }
+    | { kind: "terminate"; row: ContractRow }
+    | { kind: "close"; row: ContractRow }
+    | null;
+  const [modal, setModal] = useState<ModalState>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -149,7 +151,7 @@ function SecuritiesContractsPage({ config }: { config: SecuritiesConfig }) {
       <div className="bonds-head">
         <div>
           <h1>{config.title}</h1>
-          <button type="button" className="bonds-add" onClick={() => setModalOpen(true)}>
+          <button type="button" className="bonds-add" onClick={() => setModal({ kind: "add" })}>
             +Add New Contract
           </button>
         </div>
@@ -232,13 +234,11 @@ function SecuritiesContractsPage({ config }: { config: SecuritiesConfig }) {
                 </td>
                 <td>
                   <div className="bonds-actions">
-                    <button type="button">View</button>
+                    <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
                     <span aria-hidden>·</span>
-                    <button type="button">Terminate</button>
+                    <button type="button" onClick={() => setModal({ kind: "terminate", row })}>Terminate</button>
                     <span aria-hidden>·</span>
-                    <button type="button" className="is-danger">
-                      Close
-                    </button>
+                    <button type="button" className="is-danger" onClick={() => setModal({ kind: "close", row })}>Close</button>
                   </div>
                 </td>
               </tr>
@@ -247,14 +247,253 @@ function SecuritiesContractsPage({ config }: { config: SecuritiesConfig }) {
         </table>
       </div>
 
-      {modalOpen ? (
-        <AddSecuritiesModal
-          title={config.modalTitle}
-          defaultId={config.defaultId}
-          defaultCounterparty={config.defaultCounterparty}
-          onClose={() => setModalOpen(false)}
+      {modal?.kind === "add" ? (
+        config.modalKind === "tbill" ? (
+          <AddTreasuryBillModal
+            title={config.modalTitle}
+            defaultId={config.defaultId}
+            defaultCounterparty={config.defaultCounterparty}
+            onClose={() => setModal(null)}
+          />
+        ) : (
+          <AddSecuritiesModal
+            title={config.modalTitle}
+            defaultId={config.defaultId}
+            defaultCounterparty={config.defaultCounterparty}
+            onClose={() => setModal(null)}
+          />
+        )
+      ) : null}
+      {modal?.kind === "view" ? (
+        <ViewDetailsModal
+          title={config.modalKind === "tbill" ? "View Treasury Bill" : "View Bond Contract"}
+          fields={[
+            { label: "Customer ID", value: modal.row.id },
+            { label: "Counterparty", value: modal.row.counterparty },
+            { label: "Face Value", value: modal.row.faceValue },
+            { label: "Purchase Date", value: modal.row.purchaseDate, date: true },
+            { label: "Maturity Date", value: modal.row.maturityDate, date: true },
+            { label: "Interest Rate", value: `${modal.row.rate}%` },
+            { label: "Status", value: modal.row.status },
+          ]}
+          onClose={() => setModal(null)}
         />
       ) : null}
+      {modal?.kind === "terminate" ? (
+        <ConfirmActionModal
+          title="Terminate Contract ?"
+          message={`Do you want to terminate ${modal.row.id}?`}
+          confirmLabel="YES"
+          cancelLabel="NO"
+          tone="warning"
+          onConfirm={() => setModal(null)}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+      {modal?.kind === "close" ? (
+        <ConfirmActionModal
+          title="Close Contract ?"
+          message={`Do you want to close ${modal.row.id}?`}
+          confirmLabel="YES"
+          cancelLabel="NO"
+          tone="danger"
+          onConfirm={() => setModal(null)}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function AddTreasuryBillModal({
+  title,
+  defaultId,
+  defaultCounterparty,
+  onClose,
+}: {
+  title: string;
+  defaultId: string;
+  defaultCounterparty: string;
+  onClose: () => void;
+}) {
+  const [createdBy, setCreatedBy] = useState("Otiki Ola");
+  const [dateCreated, setDateCreated] = useState("2025-06-15");
+  const [contractId, setContractId] = useState(defaultId);
+  const [counterparty, setCounterparty] = useState(defaultCounterparty);
+  const [purchaseDate, setPurchaseDate] = useState("2025-06-15");
+  const [maturityDate, setMaturityDate] = useState("2025-06-15");
+  const [faceValue, setFaceValue] = useState("₦500,000.00");
+  const [interestRate, setInterestRate] = useState("15%");
+  const [maturityValue, setMaturityValue] = useState("₦1,000,000*");
+  const [frequency, setFrequency] = useState("Monthly");
+  const [acctFaceValue, setAcctFaceValue] = useState("₦500,000.00");
+  const [acctRateType, setAcctRateType] = useState("Discount");
+  const [principalGl, setPrincipalGl] = useState("Treasury Investment");
+  const [interestGl, setInterestGl] = useState("40001-Income");
+
+  return (
+    <div className="bond-modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="bond-modal bond-modal--tbill"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-tbill-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="bond-modal-head">
+          <h2 id="add-tbill-title">{title}</h2>
+          <button type="button" className="bond-modal-close" aria-label="Close" onClick={onClose}>
+            ×
+          </button>
+        </header>
+
+        <div className="bond-modal-body">
+          <div className="bond-modal-grid">
+            <label className="bond-field">
+              <span>Created By</span>
+              <div className="bond-select">
+                <select value={createdBy} onChange={(e) => setCreatedBy(e.target.value)}>
+                  <option>Otiki Ola</option>
+                  <option>Admin 01</option>
+                  <option>Admin 02</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Date Created</span>
+              <div className="bond-date">
+                <CalendarIcon />
+                <input type="date" value={dateCreated} onChange={(e) => setDateCreated(e.target.value)} />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Contract ID</span>
+              <input value={contractId} onChange={(e) => setContractId(e.target.value)} />
+            </label>
+            <label className="bond-field">
+              <span>Counter Party</span>
+              <div className="bond-select">
+                <select value={counterparty} onChange={(e) => setCounterparty(e.target.value)}>
+                  <option>CBN</option>
+                  <option>FGN</option>
+                  <option>DANGOTE GROUP</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Purchase Date</span>
+              <div className="bond-date">
+                <CalendarIcon />
+                <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Maturity Date</span>
+              <div className="bond-date">
+                <CalendarIcon />
+                <input type="date" value={maturityDate} onChange={(e) => setMaturityDate(e.target.value)} />
+              </div>
+            </label>
+          </div>
+
+          <h3 className="bond-modal-section">Financial Details</h3>
+          <div className="bond-modal-grid">
+            <label className="bond-field">
+              <span>Face Value (₦)</span>
+              <input value={faceValue} onChange={(e) => setFaceValue(e.target.value)} />
+            </label>
+            <label className="bond-field">
+              <span>Interest Rate (%)</span>
+              <div className="bond-select">
+                <select value={interestRate} onChange={(e) => setInterestRate(e.target.value)}>
+                  <option>15%</option>
+                  <option>8.50%</option>
+                  <option>10%</option>
+                  <option>12%</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Maturity Value</span>
+              <div className="bond-select">
+                <select value={maturityValue} onChange={(e) => setMaturityValue(e.target.value)}>
+                  <option>₦1,000,000*</option>
+                  <option>₦500,000.00</option>
+                  <option>₦750,000.00</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+            <label className="bond-field">
+              <span>Frequency</span>
+              <div className="bond-select">
+                <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+                  <option>Monthly</option>
+                  <option>Quarterly</option>
+                  <option>At Maturity</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+          </div>
+
+          <h3 className="bond-modal-section">Accounting System Value</h3>
+          <div className="bond-modal-grid">
+            <label className="bond-field">
+              <span>Face Value (₦)</span>
+              <input value={acctFaceValue} onChange={(e) => setAcctFaceValue(e.target.value)} />
+            </label>
+            <label className="bond-field">
+              <span>Interest Rate (%)</span>
+              <div className="bond-select">
+                <select value={acctRateType} onChange={(e) => setAcctRateType(e.target.value)}>
+                  <option>Discount</option>
+                  <option>Coupon</option>
+                  <option>Yield</option>
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+          </div>
+
+          <h3 className="bond-modal-section">Ledger Set Up</h3>
+          <div className="bond-modal-grid">
+            <label className="bond-field">
+              <span>Principal GL</span>
+              <input value={principalGl} onChange={(e) => setPrincipalGl(e.target.value)} />
+            </label>
+            <label className="bond-field">
+              <span>Interest Income GL</span>
+              <div className="bond-select">
+                <select value={interestGl} onChange={(e) => setInterestGl(e.target.value)}>
+                  <option>40001-Income</option>
+                  {INTEREST_GL_UNIQUE.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <footer className="bond-modal-foot">
+          <div className="bond-modal-foot-left">
+            <button type="button" className="bond-btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className="bond-btn-ghost" onClick={() => window.alert("Closed")}>
+              Save Draft
+            </button>
+          </div>
+          <button type="button" className="bond-btn-primary" onClick={onClose}>
+            Create
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -458,7 +697,7 @@ function AddSecuritiesModal({
             <button type="button" className="bond-btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className="bond-btn-ghost">
+            <button type="button" className="bond-btn-ghost" onClick={() => window.alert("Closed")}>
               Save Draft
             </button>
           </div>
@@ -471,21 +710,6 @@ function AddSecuritiesModal({
   );
 }
 
-function ContractTypeTabs() {
-  return (
-    <nav className="bonds-tabs" aria-label="Contract types">
-      {CONTRACT_TABS.map((tab) => (
-        <NavLink
-          key={tab.to}
-          to={tab.to}
-          className={({ isActive }) => (isActive ? "is-active" : undefined)}
-        >
-          {tab.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
 
 export function ContractPlaceholderPage({ title }: { title: string }) {
   return (
@@ -519,6 +743,15 @@ function FilterIcon() {
         strokeWidth="1.7"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 3.5v3M16 3.5v3M3.5 9.5h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

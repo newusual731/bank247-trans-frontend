@@ -1,0 +1,135 @@
+.vld-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vld-drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  background: #fff;
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.35rem 1.1rem;
+}
+
+.vld-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vld-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.vld-head p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.vld-close {
+  border: none;
+  background: none;
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vld-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 0.95rem;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.vld-meta div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.vld-meta dt {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.vld-meta dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #111827;
+}
+
+.vld-table-wrap {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.vld-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.vld-table-wrap th,
+.vld-table-wrap td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: left;
+}
+
+.vld-table-wrap th {
+  background: #f9fafb;
+  font-weight: 650;
+  color: #4b5563;
+  position: sticky;
+  top: 0;
+}
+
+.vld-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.vld-ghost {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vld-primary {
+  border: none;
+  background: #1a56be;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+}

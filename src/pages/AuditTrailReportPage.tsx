@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import "./AuditTrailReportPage.css";
+import { ReportTabs } from "../components/ReportTabs";
+import { AuditTooltip, ExportMenu } from "../components/SharedUiBits";
 
 type AuditRow = {
   date: string;
@@ -91,14 +92,7 @@ export function AuditTrailReportPage() {
 
   return (
     <div className="audit">
-      <div className="audit-report-tabs">
-        <Link to="/reports/account-statement">Account Statement</Link>
-        <Link to="/reports/audit-trail" className="is-active">
-          Audit Trail
-        </Link>
-        <Link to="/reports/general-ledger">General Ledger</Link>
-        <Link to="/reports/pnl">Profit & Loss</Link>
-      </div>
+      <ReportTabs active="audit" />
 
       <h1>Audit Trail Report</h1>
 
@@ -165,11 +159,8 @@ export function AuditTrailReportPage() {
       </div>
 
       <div className="audit-actions">
-        <button type="button" className="audit-btn audit-btn--export">
-          <ExportIcon />
-          Export
-        </button>
-        <button type="button" className="audit-btn audit-btn--print">
+        <ExportMenu />
+        <button type="button" className="audit-btn audit-btn--print" onClick={() => window.print()}>
           <PrintIcon />
           Print
         </button>
@@ -229,13 +220,8 @@ export function AuditTrailReportPage() {
       </div>
 
       {tooltip ? (
-        <div
-          className="audit-tooltip"
-          style={{ left: tooltip.x, top: tooltip.y }}
-          role="tooltip"
-        >
-          <div>Created By : {tooltip.by}</div>
-          <div>Created Date : {tooltip.date}</div>
+        <div className="audit-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+          <AuditTooltip createdBy={tooltip.by} createdDate={tooltip.date} />
         </div>
       ) : null}
     </div>
@@ -259,19 +245,6 @@ function CalendarIcon() {
   );
 }
 
-function ExportIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 16V4M12 4l-4 4M12 4l4 4M5 20h14"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function PrintIcon() {
   return (

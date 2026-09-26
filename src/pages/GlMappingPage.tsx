@@ -9,6 +9,7 @@ import {
 } from "../data/accountTypeOptions";
 import { CURRENCY_CODES } from "../data/filterDropdownOptions";
 import "./GlMappingPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
 
 type MappingRow = {
   productType: string;
@@ -121,7 +122,12 @@ export function GlMappingPage() {
   const [glClass, setGlClass] = useState<string>("Income");
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
   const [status, setStatus] = useState<string>(STATUSES[0]);
-  const [modalOpen, setModalOpen] = useState(false);
+  type ModalState =
+    | { kind: "add" }
+    | { kind: "edit"; row: MappingRow }
+    | { kind: "view"; row: MappingRow }
+    | null;
+  const [modal, setModal] = useState<ModalState>(null);
 
   const rows = useMemo(() => {
     return ROWS.filter((r) => {
@@ -184,15 +190,15 @@ export function GlMappingPage() {
       </div>
 
       <div className="glm-actions">
-        <button type="button" className="glm-btn glm-btn--primary" onClick={() => setModalOpen(true)}>
+        <button type="button" className="glm-btn glm-btn--primary" onClick={() => setModal({ kind: "add" })}>
           +Add New Mapping
         </button>
         <div className="glm-actions-right">
-          <button type="button" className="glm-btn glm-btn--export">
+          <button type="button" className="glm-btn glm-btn--export" onClick={() => window.print()}>
             <ExportIcon />
             Export
           </button>
-          <button type="button" className="glm-btn glm-btn--print">
+          <button type="button" className="glm-btn glm-btn--print" onClick={() => window.print()}>
             <PrintIcon />
             Print
           </button>
@@ -227,9 +233,9 @@ export function GlMappingPage() {
                 <td>{row.status}</td>
                 <td>
                   <div className="glm-row-actions">
-                    <button type="button">View</button>
+                    <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
                     <span aria-hidden>·</span>
-                    <button type="button" className="glm-edit">
+                    <button type="button" className="glm-edit" onClick={() => setModal({ kind: "edit", row })}>
                       Edit <ChevronDown />
                     </button>
                   </div>
@@ -240,18 +246,47 @@ export function GlMappingPage() {
         </table>
       </div>
 
-      {modalOpen ? <AddMappingModal onClose={() => setModalOpen(false)} /> : null}
+      {modal?.kind === "add" || modal?.kind === "edit" ? (
+        <AddMappingModal
+          mode={modal.kind}
+          initial={modal.kind === "edit" ? modal.row : undefined}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+      {modal?.kind === "view" ? (
+        <ViewDetailsModal
+          title="View GL Mapping"
+          fields={[
+            { label: "Product Type", value: modal.row.productType },
+            { label: "Product Name", value: modal.row.productName },
+            { label: "GL Account Type", value: modal.row.glAccountType },
+            { label: "GL Code", value: modal.row.glCode },
+            { label: "GL Name", value: modal.row.glName },
+            { label: "Currency", value: modal.row.currency },
+            { label: "Status", value: modal.row.status },
+          ]}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function AddMappingModal({ onClose }: { onClose: () => void }) {
-  const [productType, setProductType] = useState<string>(MAPPING_PRODUCT_TYPES[0]);
-  const [productName, setProductName] = useState<string>(PRODUCT_NAMES[0]);
-  const [glRole, setGlRole] = useState<string>(GL_LEDGER_ROLES[0]);
-  const [glCode, setGlCode] = useState<string>(GL_LEDGER_ROLES[0]);
-  const [currency, setCurrency] = useState<string>(CURRENCY_CODES[0]);
-  const [active, setActive] = useState(true);
+function AddMappingModal({
+  onClose,
+  mode = "add",
+  initial,
+}: {
+  onClose: () => void;
+  mode?: "add" | "edit";
+  initial?: (typeof ROWS)[number];
+}) {
+  const [productType, setProductType] = useState<string>(initial?.productType ?? MAPPING_PRODUCT_TYPES[0]);
+  const [productName, setProductName] = useState<string>(initial?.productName ?? PRODUCT_NAMES[0]);
+  const [glRole, setGlRole] = useState<string>(initial?.glAccountType ?? GL_LEDGER_ROLES[0]);
+  const [glCode, setGlCode] = useState<string>(initial?.glCode ?? GL_LEDGER_ROLES[0]);
+  const [currency, setCurrency] = useState<string>(initial?.currency ?? CURRENCY_CODES[0]);
+  const [active, setActive] = useState((initial?.status ?? "Active") === "Active");
 
   return (
     <div className="glm-modal-backdrop" role="presentation" onClick={onClose}>
@@ -264,7 +299,7 @@ function AddMappingModal({ onClose }: { onClose: () => void }) {
       >
         <header className="glm-modal-head">
           <div>
-            <h2 id="add-mapping-title">Add New Mapping</h2>
+            <h2 id="add-mapping-title">{mode === "edit" ? "Edit Mapping" : "Add New Mapping"}</h2>
             <h3 className="glm-modal-sub">Mapping Details</h3>
           </div>
           <button type="button" className="glm-modal-close" onClick={onClose} aria-label="Close">
@@ -376,7 +411,7 @@ function AddMappingModal({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <div className="glm-modal-foot-right">
-            <button type="button" className="glm-btn glm-btn--outline">
+            <button type="button" className="glm-btn glm-btn--outline" onClick={() => { window.alert("Mapping saved (MVP)"); onClose(); }}>
               Save
             </button>
             <button type="button" className="glm-btn glm-btn--primary" onClick={onClose}>

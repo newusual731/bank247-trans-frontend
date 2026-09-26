@@ -1,0 +1,208 @@
+.txh-head {
+  margin-bottom: 1.15rem;
+}
+
+.txh-head h1 {
+  margin: 0 0 0.3rem;
+  font-size: 1.55rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.txh-head p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* Tile cards — same pattern as Reporting / Teller Cash */
+.txh-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+}
+
+.txh-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 148px;
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid #eceef1;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.txh-card:hover {
+  border-color: #fdba74;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.08);
+}
+
+.txh-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  margin-bottom: 0.85rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.txh-icon svg {
+  display: block;
+}
+
+.txh-icon.is-purple {
+  background: #7c3aed;
+}
+.txh-icon.is-peach {
+  background: #f0b27a;
+}
+.txh-icon.is-pink {
+  background: #f472b6;
+}
+
+.txh-rec {
+  position: absolute;
+  top: 0.95rem;
+  right: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.txh-card strong {
+  display: block;
+  width: 100%;
+  padding-right: 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.txh-rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: #f1f2f4;
+  margin: 0.75rem 0 0.55rem;
+}
+
+.txh-card em {
+  display: block;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.txh-chev {
+  position: absolute;
+  right: 1.05rem;
+  top: 4.35rem;
+  color: #ea580c;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Recent Entries — unchanged layout */
+.txh-recent {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.txh-recent-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  gap: 1rem;
+}
+
+.txh-recent-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.txh-recent-head a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.txh-table-wrap {
+  overflow: auto;
+}
+
+.txh-recent table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.txh-recent th,
+.txh-recent td {
+  text-align: left;
+  padding: 0.75rem 0.55rem;
+  border-bottom: 1px solid #f1f2f4;
+  font-size: 0.8rem;
+}
+
+.txh-recent th {
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.txh-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.txh-pill.is-posted {
+  background: #dcfce7;
+  color: #166534;
+}
+.txh-pill.is-pending {
+  background: #fef3c7;
+  color: #a16207;
+}
+.txh-pill.is-reversed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 1100px) {
+  .txh-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .txh-grid {
+    grid-template-columns: 1fr;
+  }
+}

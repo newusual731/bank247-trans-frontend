@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { ReportTabs } from "../components/ReportTabs";
 import {
   BRANCH_NAMES,
   COST_CENTERS,
@@ -51,14 +51,7 @@ export function GeneralLedgerReportPage() {
 
   return (
     <div className="glr">
-      <div className="glr-report-tabs">
-        <Link to="/reports/account-statement">Account Statement</Link>
-        <Link to="/reports/audit-trail">Audit Trail</Link>
-        <Link to="/reports/general-ledger" className="is-active">
-          General Ledger
-        </Link>
-        <Link to="/reports/pnl">Profit & Loss</Link>
-      </div>
+      <ReportTabs active="gl" />
 
       <h1>General Ledger Report</h1>
 
@@ -151,11 +144,11 @@ export function GeneralLedgerReportPage() {
       </div>
 
       <div className="glr-actions">
-        <button type="button" className="glr-btn glr-btn--export">
+        <button type="button" className="glr-btn glr-btn--export" onClick={() => window.print()}>
           <ExportIcon />
           Export
         </button>
-        <button type="button" className="glr-btn glr-btn--print">
+        <button type="button" className="glr-btn glr-btn--print" onClick={() => window.print()}>
           <PrintIcon />
           Print
         </button>

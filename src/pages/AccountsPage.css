@@ -226,6 +226,137 @@
   opacity: 0.7;
 }
 
+.accounts-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.accounts-edit svg {
+  width: 12px;
+  height: 12px;
+}
+
+.accounts-empty {
+  text-align: center !important;
+  color: #9ca3af !important;
+  padding: 2.5rem 1rem !important;
+}
+
+.accounts-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.acct-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.acct-ledger {
+  width: min(560px, 100%);
+  max-height: min(92vh, 820px);
+  margin-left: auto;
+  background: #fff;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.acct-ledger-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem 0.85rem;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+.acct-ledger-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.acct-ledger-head p {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.acct-ledger-meta {
+  margin: 0;
+  padding: 0.95rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+.acct-ledger-meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.acct-ledger-meta dt {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 650;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.acct-ledger-meta dd {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.acct-ledger-table-wrap {
+  overflow: auto;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.acct-ledger-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.acct-ledger-table-wrap th,
+.acct-ledger-table-wrap td {
+  text-align: left;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.acct-ledger-table-wrap th {
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 650;
+  background: #fafafa;
+}
+
+.acct-ledger-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.95rem 1.25rem 1.15rem;
+  border-top: 1px solid #f1f2f4;
+}
+
 /* Modal */
 .acct-modal-backdrop {
   position: fixed;

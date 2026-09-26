@@ -1,0 +1,164 @@
+.mcfg h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.mcfg-sub {
+  margin: 0 0 1.25rem;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+.mcfg-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.mcfg-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  font: inherit;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.mcfg-card strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.mcfg-card em {
+  display: block;
+  margin-top: 0.2rem;
+  font-style: normal;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.mcfg-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.mcfg-card-icon.is-limit {
+  background: #92400e;
+}
+
+.mcfg-card-icon.is-report {
+  background: #f59e0b;
+}
+
+.mcfg-chev {
+  margin-left: auto;
+  color: #f97316;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.mcfg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.25);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.mcfg-modal {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.4rem 1.35rem 1.2rem;
+  position: relative;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.14);
+}
+
+.mcfg-x {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.9rem;
+  border: none;
+  background: none;
+  font-size: 1.35rem;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.mcfg-modal h2 {
+  margin: 0 0 1.1rem;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.mcfg-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 550;
+  color: #374151;
+}
+
+.mcfg-modal input {
+  height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.mcfg-modal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.mcfg-close,
+.mcfg-submit {
+  height: 38px;
+  padding: 0 1.1rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.mcfg-close {
+  background: #fff;
+  border: 1px solid #f97316;
+  color: #f97316;
+}
+
+.mcfg-submit {
+  background: #f97316;
+  border: none;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .mcfg-cards {
+    grid-template-columns: 1fr;
+  }
+}

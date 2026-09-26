@@ -1,0 +1,272 @@
+.fsel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  width: 100%;
+}
+
+.fsel-label,
+.fsel-field-label {
+  font-size: 0.78rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.fsel-wrap {
+  position: relative;
+}
+
+.fsel-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  height: 42px;
+  padding: 0 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.86rem;
+  color: #111827;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fsel-trigger .is-placeholder {
+  color: #9ca3af;
+}
+
+.fsel-chevron {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.fsel-menu {
+  --fdrop-hover: #fff1f0;
+  margin: 0;
+  padding: 0.55rem 0.4rem;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #111827;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  min-width: 180px;
+}
+
+.fsel-menu:not(.is-static) {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+
+.fsel-menu.is-static {
+  position: relative;
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+}
+
+.fsel-menu.is-checked {
+  min-width: 300px;
+}
+
+.fsel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.85rem;
+  font: inherit;
+  font-size: 0.875rem;
+  color: #111827;
+  cursor: pointer;
+  border-radius: 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fsel-menu.is-highlight .fsel-item:hover,
+.fsel-menu.is-highlight .fsel-item.is-active {
+  background: var(--fdrop-hover);
+}
+
+.fsel-menu:not(.is-highlight) .fsel-item:hover {
+  background: #f3f4f6;
+}
+
+.fsel-menu:not(.is-highlight) .fsel-item.is-active {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.fsel-check {
+  width: 0.9rem;
+  flex: 0 0 0.9rem;
+  font-size: 0.85rem;
+}
+
+.asrch {
+  width: min(280px, 100%);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.asrch-field {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #9ca3af;
+}
+
+.asrch-field input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 0.86rem;
+  color: #111827;
+  background: transparent;
+}
+
+.asrch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0;
+}
+
+.asrch-list button {
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  padding: 0.65rem 0.95rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #111827;
+  cursor: pointer;
+}
+
+.asrch-list button:hover,
+.asrch-list button.is-active {
+  background: #fff1f0;
+}
+
+.mdp {
+  width: min(320px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  padding: 0.85rem 0.9rem 1rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.mdp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.mdp-head > button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f5f5f5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.mdp-selectors {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.mdp-selectors button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mdp-week,
+.mdp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.mdp-week span {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  font-weight: 600;
+  padding: 0.35rem 0;
+}
+
+.mdp-grid button {
+  height: 34px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.mdp-grid button.is-muted {
+  color: #e0e0e0;
+}
+
+.mdp-grid button:hover:not(.is-muted) {
+  background: #fff1f0;
+}
+
+.ctabs-sample {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ctabs-sample button {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 550;
+  color: #6b7280;
+  padding: 0.35rem 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.ctabs-sample button.is-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 650;
+}
+
+.cat-divider {
+  height: 2px;
+  width: 100%;
+  max-width: 220px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+}

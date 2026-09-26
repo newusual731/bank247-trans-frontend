@@ -16,9 +16,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--peach);
-  border-radius: 12px;
-  padding: 0.95rem 1.15rem;
+  background: transparent;
+  padding: 0;
   margin-bottom: 0.85rem;
 }
 

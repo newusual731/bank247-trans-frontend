@@ -41,7 +41,7 @@ export function ChartOfAccountsPage() {
       <div className="coa-head">
         <div>
           <h1>Chart of Account</h1>
-          <button type="button" className="coa-export">
+          <button type="button" className="coa-export" onClick={() => window.print()}>
             <ExportIcon />
             Export
           </button>

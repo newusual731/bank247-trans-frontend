@@ -1,0 +1,10 @@
+.bdp-ledger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tf-input--tall {
+  min-height: 56px;
+}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
 import { FilterDropdown } from "../components/FilterDropdown";
+import { ContractTypeTabs } from "../components/ContractTypeTabs";
 import {
   CONTRACT_PRODUCT_FILTERS,
   LOAN_GL_ACCOUNTS,
@@ -10,6 +10,7 @@ import {
   TENOR_MONTHS,
 } from "../data/filterDropdownOptions";
 import "./LoanContractsPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
 
 type LoanRow = {
   id: string;
@@ -19,16 +20,6 @@ type LoanRow = {
   maturityDate: string;
   status: string;
 };
-
-const CONTRACT_TABS = [
-  { to: "/contracts/balances", label: "Contract Balances" },
-  { to: "/contracts/loans", label: "Loan Contracts" },
-  { to: "/contracts/treasury-bills", label: "Treasury Bill" },
-  { to: "/contracts/bonds", label: "Bond Contracts" },
-  { to: "/contracts/forex", label: "Forex Contracts" },
-  { to: "/contracts/lc", label: "Letters of Credit" },
-  { to: "/gl/chart", label: "Chart of Accounts" },
-] as const;
 
 const ROWS: LoanRow[] = Array.from({ length: 9 }, (_, i) => ({
   id: i === 0 ? "L001" : `L00${i + 1}`,
@@ -43,7 +34,11 @@ export function LoanContractsPage() {
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(CONTRACT_PRODUCT_FILTERS[0]);
   const [tableAction, setTableAction] = useState<string>(TABLE_OVERFLOW_ACTIONS[1]);
-  const [modalOpen, setModalOpen] = useState(false);
+  type ModalState =
+    | { kind: "add" }
+    | { kind: "view"; row: LoanRow }
+    | null;
+  const [modal, setModal] = useState<ModalState>(null);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -78,7 +73,7 @@ export function LoanContractsPage() {
       <div className="loan-head">
         <div>
           <h1>LOAN CONTRACT</h1>
-          <button type="button" className="loan-add" onClick={() => setModalOpen(true)}>
+          <button type="button" className="loan-add" onClick={() => setModal({ kind: "add" })}>
             +Add New Contract
           </button>
         </div>
@@ -121,17 +116,7 @@ export function LoanContractsPage() {
         </div>
       </div>
 
-      <nav className="loan-tabs" aria-label="Contract types">
-        {CONTRACT_TABS.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            className={({ isActive }) => (isActive ? "is-active" : undefined)}
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
+      <ContractTypeTabs />
 
       <label className="loan-search">
         <SearchIcon />
@@ -168,7 +153,7 @@ export function LoanContractsPage() {
                   <span className="loan-status">{row.status}</span>
                 </td>
                 <td>
-                  <button type="button" className="loan-view">
+                  <button type="button" className="loan-view" onClick={() => setModal({ kind: "view", row })}>
                     View
                   </button>
                 </td>
@@ -178,7 +163,21 @@ export function LoanContractsPage() {
         </table>
       </div>
 
-      {modalOpen ? <AddLoanModal onClose={() => setModalOpen(false)} /> : null}
+      {modal?.kind === "add" ? <AddLoanModal onClose={() => setModal(null)} /> : null}
+      {modal?.kind === "view" ? (
+        <ViewDetailsModal
+          title="View Loan Contract"
+          fields={[
+            { label: "Customer ID", value: modal.row.id },
+            { label: "Counterparty", value: modal.row.counterparty },
+            { label: "Amount", value: modal.row.amount },
+            { label: "Start Date", value: modal.row.startDate, date: true },
+            { label: "Maturity Date", value: modal.row.maturityDate, date: true },
+            { label: "Status", value: modal.row.status },
+          ]}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
     </div>
   );
 }

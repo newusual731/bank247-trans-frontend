@@ -1,0 +1,45 @@
+.ctabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.15rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0.95rem;
+}
+
+.ctabs a {
+  text-decoration: none;
+  color: #6b7280;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.45rem 0 0.7rem;
+  position: relative;
+}
+
+.ctabs a.is-active {
+  color: #2563eb;
+  font-weight: 650;
+}
+
+.ctabs a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #2563eb;
+  border-radius: 2px 2px 0 0;
+}
+
+@media (max-width: 720px) {
+  .ctabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+  }
+  .ctabs a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { GlModuleTabs } from "../components/GlModuleTabs";
 import { COST_CENTERS } from "../data/accountTypeOptions";
 import "./PnlEntryPage.css";
+import { AddEntryModal } from "./GlEntryModals";
 
 type PnlRow = {
   refId: string;
@@ -40,6 +40,7 @@ const ROWS: PnlRow[] = [
 
 export function PnlEntryPage() {
   const [expanded, setExpanded] = useState(false);
+  const [entryOpen, setEntryOpen] = useState(false);
   const [unit, setUnit] = useState<string>(BUSINESS_UNITS[0]);
   const [glCode, setGlCode] = useState<string>(GL_CODES[0]);
   const [product, setProduct] = useState<string>(PRODUCTS[0]);
@@ -49,10 +50,9 @@ export function PnlEntryPage() {
 
   return (
     <div className={`pnl${expanded ? " is-expanded" : ""}`}>
-      <GlModuleTabs />
       <div className="pnl-head">
         <h1>P&L Entry</h1>
-        <button type="button" className="pnl-export">
+        <button type="button" className="pnl-export" onClick={() => window.print()}>
           <ExportIcon />
           Export
         </button>
@@ -138,7 +138,7 @@ export function PnlEntryPage() {
                     <>
                       <td>{row.amount}</td>
                       <td>
-                        <button type="button" className="pnl-edit">
+                        <button type="button" className="pnl-edit" onClick={() => setEntryOpen(true)}>
                           Edit
                         </button>
                       </td>
@@ -224,6 +224,7 @@ export function PnlEntryPage() {
           </aside>
         ) : null}
       </div>
+      {entryOpen ? <AddEntryModal onClose={() => setEntryOpen(false)} /> : null}
     </div>
   );
 }

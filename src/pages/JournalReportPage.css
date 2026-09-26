@@ -1,0 +1,358 @@
+.jnr {
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --export: #0d9488;
+  --export-hover: #0f766e;
+  --print: #3f51b5;
+  --print-hover: #3949ab;
+  --ledger: #16a34a;
+  --ledger-hover: #15803d;
+  --debit-bg: #fee2e2;
+  --debit-text: #991b1b;
+  --credit-bg: #dcfce7;
+  --credit-text: #166534;
+}
+
+.jnr-report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.jnr-report-tabs a {
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid transparent;
+}
+
+.jnr-report-tabs a.is-active,
+.jnr-report-tabs a:hover {
+  color: #2563eb;
+}
+
+.jnr-report-tabs a.is-active {
+  border-bottom-color: #2563eb;
+  font-weight: 650;
+}
+
+.jnr-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.jnr h1 {
+  margin: 0 0 0.55rem;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.jnr-variant-tabs {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.jnr-variant-tabs button {
+  height: 28px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jnr-variant-tabs button.is-active {
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.jnr-filters {
+  display: grid;
+  gap: 0.75rem 0.55rem;
+  margin-bottom: 0.85rem;
+  align-items: end;
+}
+
+.jnr-filters--classic {
+  grid-template-columns: minmax(240px, 1.55fr) repeat(3, minmax(0, 1fr));
+}
+
+.jnr-filters--dash {
+  grid-template-columns: minmax(240px, 1.55fr) repeat(7, minmax(0, 1fr));
+}
+
+.jnr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.jnr-field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: #4b5563;
+}
+
+.jnr-range {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.jnr-range-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.jnr-range input,
+.jnr-select select {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.jnr-range input {
+  width: 8.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.jnr-select {
+  position: relative;
+}
+
+.jnr-select select {
+  width: 100%;
+  appearance: none;
+  padding-right: 1.7rem;
+}
+
+.jnr-select svg {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.jnr-range input:focus,
+.jnr-select select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.jnr-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+  align-items: center;
+}
+
+.jnr-actions .export-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--export);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jnr-actions .export-menu-trigger:hover {
+  background: var(--export-hover);
+}
+
+.jnr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jnr-btn--print {
+  background: var(--print);
+}
+
+.jnr-btn--print:hover {
+  background: var(--print-hover);
+}
+
+.jnr-btn--ledger {
+  background: var(--ledger);
+}
+
+.jnr-btn--ledger:hover {
+  background: var(--ledger-hover);
+}
+
+.jnr-table-wrap {
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 320px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.jnr-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+}
+
+.jnr-table--dash {
+  min-width: 1280px;
+}
+
+.jnr-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: #fafafa;
+  vertical-align: middle;
+}
+
+.jnr-th {
+  display: inline-block;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.jnr-th--debit {
+  background: var(--debit-bg);
+  color: var(--debit-text);
+}
+
+.jnr-th--credit {
+  background: var(--credit-bg);
+  color: var(--credit-text);
+}
+
+.jnr-table td {
+  padding: 0.85rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #374151;
+  border-bottom: 1px solid #eef0f2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.jnr-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.jnr-total td {
+  border-bottom: none;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 1.05rem;
+  padding-bottom: 1.05rem;
+  background: #fff !important;
+}
+
+.jnr-hint {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.jnr-hint a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.jnr-hint a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1280px) {
+  .jnr-filters--dash {
+    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .jnr-filters--classic,
+  .jnr-filters--dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jnr-field--range {
+    grid-column: 1 / -1;
+  }
+
+  .jnr-range {
+    flex-wrap: wrap;
+  }
+
+  .jnr-title-row {
+    flex-direction: column;
+  }
+}
+
+.jnr-table tbody tr {
+  cursor: pointer;
+}
+.jnr-table tbody tr.is-selected {
+  background: #eff6ff;
+}
+.jnr-table tbody tr.jnr-total {
+  cursor: default;
+}
+.jnr-row-ledger {
+  border: none;
+  background: none;
+  color: #1a56be;
+  font-weight: 650;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+.jnr-row-ledger:hover {
+  text-decoration: underline;
+}

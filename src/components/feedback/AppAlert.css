@@ -1,0 +1,91 @@
+.app-alert {
+  --accent: #15803d;
+  --icon-bg: #dcfce7;
+  --icon: #166534;
+
+  position: fixed;
+  top: 1.15rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  align-items: stretch;
+  width: min(440px, calc(100vw - 2rem));
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+}
+
+.app-alert.is-error {
+  --accent: #b91c1c;
+  --icon-bg: #fee2e2;
+  --icon: #b91c1c;
+}
+
+.app-alert.is-warning {
+  --accent: #ca8a04;
+  --icon-bg: #fef3c7;
+  --icon: #a16207;
+}
+
+.app-alert-accent {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--accent);
+}
+
+.app-alert-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0.75rem 0.35rem 0.75rem 0.75rem;
+  border-radius: 10px;
+  background: var(--icon-bg);
+  color: var(--icon);
+  flex-shrink: 0;
+}
+
+.app-alert-copy {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem 0.65rem 0.85rem 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-alert-copy strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.app-alert-copy span {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.35;
+}
+
+.app-alert-divider {
+  width: 1px;
+  background: #eef0f2;
+  margin: 0.65rem 0;
+  flex-shrink: 0;
+}
+
+.app-alert-close {
+  border: none;
+  background: transparent;
+  width: 44px;
+  color: #4b5563;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-alert-close:hover {
+  color: #111827;
+}

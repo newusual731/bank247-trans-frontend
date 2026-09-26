@@ -1,0 +1,144 @@
+.tch {
+  min-height: 100%;
+}
+
+.tch-panel {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 14px;
+  padding: 1.5rem 1.5rem 1.65rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.tch h1 {
+  margin: 0 0 1.35rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.tch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 148px;
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid #eceef1;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tch-card:hover {
+  border-color: #fdba74;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.08);
+}
+
+.tch-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  margin-bottom: 0.85rem;
+  flex-shrink: 0;
+}
+
+.tch-icon.is-purple {
+  background: #7c3aed;
+}
+.tch-icon.is-peach {
+  background: #f0b27a;
+}
+.tch-icon.is-red,
+.tch-icon.is-pink {
+  background: #f472b6;
+}
+.tch-icon.is-navy {
+  background: #1e3a8a;
+}
+.tch-icon.is-yellow {
+  background: #eab308;
+  border-radius: 10px;
+}
+.tch-icon.is-brown {
+  background: #a16207;
+  border-radius: 10px;
+}
+.tch-icon.is-orange {
+  background: #f59e0b;
+}
+
+.tch-rec {
+  position: absolute;
+  top: 0.95rem;
+  right: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.tch-card strong {
+  display: block;
+  width: 100%;
+  padding-right: 1.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.tch-rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: #f1f2f4;
+  margin: 0.75rem 0 0.55rem;
+}
+
+.tch-card em {
+  display: block;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.tch-chev {
+  position: absolute;
+  right: 1.05rem;
+  top: 4.35rem;
+  color: #ea580c;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 1100px) {
+  .tch-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .tch-grid {
+    grid-template-columns: 1fr;
+  }
+}

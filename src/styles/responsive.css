@@ -1,0 +1,244 @@
+/* Bank247 responsive system */
+
+:root {
+  --bp-xl: 1280px;
+  --bp-lg: 960px;
+  --bp-md: 720px;
+  --bp-sm: 480px;
+}
+
+/* ---- Tables: never blow out the page ---- */
+[class*="-table-wrap"],
+.bonds-table-wrap,
+.forex-table-wrap,
+.loan-table-wrap,
+.plc-table-wrap,
+.lc-table-wrap,
+.um-table-wrap,
+.glm-table-wrap,
+.ps-table-wrap,
+.tbr-table-wrap,
+.jnr-table-wrap,
+.asr-table-wrap,
+.glr-table-wrap,
+.pnr-table-wrap,
+.dsum-table-wrap,
+.cbal-table-wrap,
+.cprod-table-wrap,
+.accounts-table-wrap,
+.enq-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+[class*="-table"],
+table {
+  min-width: 0;
+}
+
+/* Prefer readable denser tables on small screens */
+@media (max-width: 720px) {
+  [class*="-table"] th,
+  [class*="-table"] td,
+  .bonds-table th,
+  .bonds-table td,
+  .forex-table th,
+  .forex-table td,
+  .tbr-table th,
+  .tbr-table td,
+  .jnr-table th,
+  .jnr-table td,
+  .cbal-table th,
+  .cbal-table td,
+  .cprod-table th,
+  .cprod-table td {
+    font-size: 0.75rem;
+    padding: 0.45rem 0.5rem;
+    white-space: nowrap;
+  }
+}
+
+/* ---- Filter / form grids → single column ---- */
+@media (max-width: 960px) {
+  [class*="-filters"],
+  .cbal-filters,
+  .cprod-filters,
+  .dsum-filters,
+  .tbr-filters,
+  .jnr-filters,
+  .glm-filters,
+  .ps-filters,
+  .um-filters,
+  .accounts-filters,
+  .pnr-filters,
+  .asr-filters,
+  .glr-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  [class*="-filters"],
+  .cbal-filters,
+  .cprod-filters,
+  .dsum-filters,
+  .tbr-filters,
+  .jnr-filters,
+  .glm-filters,
+  .ps-filters,
+  .um-filters,
+  .accounts-filters,
+  .pnr-filters,
+  .asr-filters,
+  .glr-filters,
+  [class*="-modal-grid"],
+  .ps-modal-grid,
+  .um-modal-grid,
+  .glm-modal-grid,
+  .forex-modal-grid,
+  .loan-modal-body,
+  .bonds-modal-grid,
+  .cprod-modal-grid,
+  .gem-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="-actions"],
+  .cprod-actions,
+  .cbal-actions,
+  .dsum-actions,
+  .tbr-actions,
+  .jnr-actions,
+  .glm-actions,
+  .ps-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* ---- Hub tiles ---- */
+@media (max-width: 1100px) {
+  .tch-grid,
+  .rhub-grid,
+  .txh-grid,
+  .dth-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .tch-grid,
+  .rhub-grid,
+  .txh-grid,
+  .dth-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---- Modals / drawers on small screens ---- */
+@media (max-width: 720px) {
+  .succ-modal,
+  .vdm-modal,
+  .cam-modal,
+  .gem-modal,
+  .ps-modal,
+  .um-modal,
+  .glm-modal,
+  .cprod-modal,
+  [class*="-modal"]:not([class*="backdrop"]) {
+    width: min(100%, calc(100vw - 1.25rem)) !important;
+    max-height: min(92vh, 100%);
+    overflow: auto;
+  }
+
+  .vld-drawer,
+  .acct-ledger {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .vdm-list > div {
+    grid-template-columns: 1fr !important;
+    gap: 0.2rem;
+  }
+}
+
+/* ---- Page titles / toolbars ---- */
+@media (max-width: 720px) {
+  .tbr-title-row,
+  .jnr-title-row,
+  .forex-head,
+  .bonds-head,
+  .loan-head,
+  .plc-head,
+  .lc-head {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .shell-content,
+  .tshell-content {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+  }
+
+  .shell-topbar {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .shell-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .shell-user-menu span,
+  .shell-user-menu {
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Contract tabs scroll on mobile */
+@media (max-width: 720px) {
+  .ctabs,
+  [class*="ContractTypeTabs"],
+  nav[class*="tabs"],
+  .contract-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .report-tabs,
+  .gl-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .report-tabs a,
+  .gl-tabs a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .tf-page,
+  .tf-panel {
+    max-width: 100%;
+  }
+
+  .tf-grid,
+  .tf-stack {
+    grid-template-columns: 1fr !important;
+  }
+}

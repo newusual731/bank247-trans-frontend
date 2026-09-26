@@ -1,0 +1,30 @@
+.txn-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.txn-nav a {
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #4b5563;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.txn-nav a:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.txn-nav a.is-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}

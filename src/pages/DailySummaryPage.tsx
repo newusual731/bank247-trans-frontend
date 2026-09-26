@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useActionFeedback } from "../components/feedback/useActionFeedback";
 import {
   BRANCH_CODES,
   CURRENCIES,
@@ -35,10 +36,26 @@ export function DailySummaryPage() {
   const [glClass, setGlClass] = useState<string>(GL_ACCOUNT_CLASSES[0]);
   const [branch, setBranch] = useState<string>(BRANCH_CODES[0]);
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
-  const [generated, setGenerated] = useState(true);
+  const [generated, setGenerated] = useState(false);
+  const { showSuccess, feedbackUi } = useActionFeedback();
+
+  const rows = useMemo(() => {
+    return ROWS.map((r) => ({
+      ...r,
+      productType,
+      currency,
+      branchCode: branch,
+    }));
+  }, [productType, currency, branch]);
+
+  const handleGenerate = () => {
+    setGenerated(true);
+    showSuccess("Daily summary generated successfully");
+  };
 
   return (
     <div className="dsum">
+      {feedbackUi}
       <h1>Daily Summary/Dashboard Report</h1>
 
       <div className="dsum-filters">
@@ -105,11 +122,11 @@ export function DailySummaryPage() {
 
       <div className="dsum-actions">
         <div className="dsum-actions-left">
-          <button type="button" className="dsum-btn dsum-btn--export">
+          <button type="button" className="dsum-btn dsum-btn--export" onClick={() => window.print()}>
             <ExportIcon />
             Export
           </button>
-          <button type="button" className="dsum-btn dsum-btn--print">
+          <button type="button" className="dsum-btn dsum-btn--print" onClick={() => window.print()}>
             <PrintIcon />
             Print
           </button>
@@ -117,7 +134,7 @@ export function DailySummaryPage() {
         <button
           type="button"
           className="dsum-btn dsum-btn--generate"
-          onClick={() => setGenerated(true)}
+          onClick={handleGenerate}
         >
           Generate Summary
         </button>
@@ -143,7 +160,7 @@ export function DailySummaryPage() {
               </tr>
             </thead>
             <tbody>
-              {ROWS.map((row, i) => (
+              {rows.map((row, i) => (
                 <tr key={i}>
                   <td className="is-left">{row.glCode}</td>
                   <td className="is-left">{row.glName}</td>

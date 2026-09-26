@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FilterDropdown } from "../components/FilterDropdown";
 import { IAM_PERMISSION_CATALOG, STAFF_ROLES, USER_STATUSES } from "../data/iamOptions";
 import "./UserManagementPage.css";
+import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
 
 type UserRow = {
   id: string;
@@ -49,7 +50,12 @@ export function UserManagementPage() {
   const [status, setStatus] = useState<string>(USER_STATUSES[0]);
   const [from, setFrom] = useState("2025-06-15");
   const [to, setTo] = useState("2025-06-15");
-  const [modalOpen, setModalOpen] = useState(false);
+  type ModalState =
+    | { kind: "add" }
+    | { kind: "edit"; row: UserRow }
+    | { kind: "view"; row: UserRow }
+    | null;
+  const [modal, setModal] = useState<ModalState>(null);
 
   const rows = useMemo(() => {
     return ROWS.filter((r) => (status ? r.status === status : true));
@@ -94,12 +100,17 @@ export function UserManagementPage() {
       </div>
 
       <div className="um-actions">
-        <button type="button" className="um-btn um-btn--primary" onClick={() => setModalOpen(true)}>
+        <button type="button" className="um-btn um-btn--primary" onClick={() => setModal({ kind: "add" })}>
           +Add New User
         </button>
-        <Link to="/settings/roles" className="um-role-link">
-          Role Management
-        </Link>
+        <div className="um-settings-links">
+          <Link to="/settings/roles" className="um-role-link">
+            Role Management
+          </Link>
+          <Link to="/settings/products" className="um-role-link">
+            Product Setup
+          </Link>
+        </div>
       </div>
 
       <div className="um-table-wrap">
@@ -130,9 +141,9 @@ export function UserManagementPage() {
                 <td>{row.lastLogin}</td>
                 <td>
                   <div className="um-row-actions">
-                    <button type="button">View</button>
+                    <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
                     <span aria-hidden>·</span>
-                    <button type="button">Edit</button>
+                    <button type="button" onClick={() => setModal({ kind: "edit", row })}>Edit</button>
                   </div>
                 </td>
               </tr>
@@ -141,19 +152,48 @@ export function UserManagementPage() {
         </table>
       </div>
 
-      {modalOpen ? <AddUserModal onClose={() => setModalOpen(false)} /> : null}
+      {modal?.kind === "add" || modal?.kind === "edit" ? (
+        <AddUserModal
+          mode={modal.kind}
+          initial={modal.kind === "edit" ? modal.row : undefined}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
+      {modal?.kind === "view" ? (
+        <ViewDetailsModal
+          title="View User"
+          fields={[
+            { label: "User ID", value: modal.row.id },
+            { label: "Full Name", value: modal.row.fullName },
+            { label: "Username", value: modal.row.userName },
+            { label: "Email", value: modal.row.email },
+            { label: "Role", value: modal.row.role },
+            { label: "Status", value: modal.row.status },
+            { label: "Last Login", value: modal.row.lastLogin, date: true },
+          ]}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function AddUserModal({ onClose }: { onClose: () => void }) {
-  const [fullName, setFullName] = useState("Akinola Oluwole Dada");
-  const [username, setUsername] = useState("Akinola1234");
-  const [email, setEmail] = useState("akinola@b247.com");
-  const [role, setRole] = useState<string>("Admin");
+function AddUserModal({
+  onClose,
+  mode = "add",
+  initial,
+}: {
+  onClose: () => void;
+  mode?: "add" | "edit";
+  initial?: UserRow;
+}) {
+  const [fullName, setFullName] = useState(initial?.fullName ?? "Akinola Oluwole Dada");
+  const [username, setUsername] = useState(initial?.userName ?? "Akinola1234");
+  const [email, setEmail] = useState(initial?.email ?? "akinola@b247.com");
+  const [role, setRole] = useState<string>(initial?.role ?? "Admin");
   const [password, setPassword] = useState("********");
   const [confirm, setConfirm] = useState("*******");
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState((initial?.status ?? "Active") === "Active");
 
   return (
     <div className="um-modal-backdrop" role="presentation" onClick={onClose}>
@@ -166,7 +206,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
       >
         <header className="um-modal-head">
           <div>
-            <h2 id="add-user-title">Add New User</h2>
+            <h2 id="add-user-title">{mode === "edit" ? "Edit User" : "Add New User"}</h2>
             <h3>User Details</h3>
           </div>
           <button type="button" className="um-modal-close" onClick={onClose} aria-label="Close">
@@ -231,11 +271,11 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <div className="um-modal-foot-right">
-            <button type="button" className="um-btn um-btn--outline">
+            <button type="button" className="um-btn um-btn--outline" onClick={onClose}>
               Post
             </button>
             <button type="button" className="um-btn um-btn--primary" onClick={onClose}>
-              Add User
+              {mode === "edit" ? "Save" : "Add User"}
             </button>
           </div>
         </footer>
@@ -257,7 +297,7 @@ export function RoleManagementPage() {
   return (
     <div className="um rm">
       <h1>Role Management</h1>
-      <button type="button" className="um-btn um-btn--primary rm-add">
+      <button type="button" className="um-btn um-btn--primary rm-add" onClick={() => window.alert("Saved (MVP)")}>
         + Add Role
       </button>
 
@@ -315,7 +355,7 @@ export function RoleManagementPage() {
           <Link to="/settings/users" className="um-btn um-btn--ghost">
             Cancel
           </Link>
-          <button type="button" className="um-btn um-btn--primary">
+          <button type="button" className="um-btn um-btn--primary" onClick={() => window.alert("Saved (MVP)")}>
             Add Role
           </button>
         </footer>

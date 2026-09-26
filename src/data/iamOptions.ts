@@ -4,14 +4,8 @@
  * Banks compose roles from these codes — they do not invent new permission strings.
  */
 
-/** ROLE.png + User Management list samples (Operations). */
-export const STAFF_ROLES = [
-  "Super Admin",
-  "Admin",
-  "Finance",
-  "Support",
-  "Operations",
-] as const;
+/** ROLE.png */
+export const STAFF_ROLES = ["Super Admin", "Admin", "Finance", "Support"] as const;
 
 export const USER_STATUSES = ["Active", "Inactive"] as const;
 

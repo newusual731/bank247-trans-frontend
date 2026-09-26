@@ -1,0 +1,318 @@
+/* Bank247 motion system — subtle, banking-appropriate */
+
+:root {
+  --motion-fast: 160ms;
+  --motion-med: 420ms;
+  --motion-slow: 480ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes b247-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes b247-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes b247-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes b247-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes b247-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes b247-icon-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.anim-page {
+  width: 100%;
+  min-height: 100%;
+  animation: b247-fade-up 480ms var(--motion-ease-out) both;
+  will-change: opacity, transform;
+}
+
+
+.shell-nav-item,
+.tshell-nav-item {
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) ease;
+}
+
+.shell-nav-item:active,
+.tshell-nav-item:active {
+  transform: scale(0.98);
+}
+
+.shell-icon-btn,
+.shell-user-menu,
+.shell-user-btn,
+.tshell-user-btn,
+.tshell-logout,
+.shell-logout {
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) ease;
+}
+
+.shell-icon-btn:hover,
+.shell-user-menu:hover {
+  transform: translateY(-1px);
+}
+
+.shell-icon-btn:active,
+.shell-user-menu:active {
+  transform: scale(0.96);
+}
+
+.tch-card,
+.rhub-card,
+.txh-card,
+.dth-card {
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-med) var(--motion-ease),
+    transform var(--motion-med) var(--motion-ease),
+    background-color var(--motion-fast) ease !important;
+}
+
+.tch-card:hover,
+.rhub-card:hover,
+.txh-card:hover,
+.dth-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.tch-card:active,
+.rhub-card:active,
+.txh-card:active,
+.dth-card:active {
+  transform: translateY(-1px) scale(0.985);
+}
+
+.tch-grid > *:nth-child(1),
+.rhub-grid > *:nth-child(1),
+.txh-grid > *:nth-child(1),
+.dth-grid > *:nth-child(1) {
+  animation: b247-fade-up var(--motion-med) var(--motion-ease-out) both;
+  animation-delay: 60ms;
+}
+.tch-grid > *:nth-child(2),
+.rhub-grid > *:nth-child(2),
+.txh-grid > *:nth-child(2),
+.dth-grid > *:nth-child(2) {
+  animation: b247-fade-up var(--motion-med) var(--motion-ease-out) both;
+  animation-delay: 220ms;
+}
+.tch-grid > *:nth-child(3),
+.rhub-grid > *:nth-child(3),
+.txh-grid > *:nth-child(3),
+.dth-grid > *:nth-child(3) {
+  animation: b247-fade-up var(--motion-med) var(--motion-ease-out) both;
+  animation-delay: 220ms;
+}
+.tch-grid > *:nth-child(n + 4),
+.rhub-grid > *:nth-child(n + 4),
+.txh-grid > *:nth-child(n + 4),
+.dth-grid > *:nth-child(n + 4) {
+  animation: b247-fade-up var(--motion-med) var(--motion-ease-out) both;
+  animation-delay: 300ms;
+}
+
+button[class*="btn--primary"],
+button[class*="-btn--primary"],
+button[class*="btn--generate"],
+button[class*="btn--gen"],
+.tf-submit,
+.vdm-ok,
+.succ-okay,
+.acct-btn-primary,
+.vld-primary,
+.um-btn--primary,
+.glm-btn--primary,
+.ps-btn--primary,
+.tbr-btn--ledger,
+.jnr-btn--ledger,
+.bonds-add,
+.forex-add,
+.loan-add,
+.plc-add,
+.lc-add {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) ease,
+    filter var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+button[class*="btn--primary"]:hover,
+button[class*="-btn--primary"]:hover,
+.tf-submit:hover,
+.vdm-ok:hover,
+.succ-okay:hover,
+.vld-primary:hover,
+.um-btn--primary:hover,
+.glm-btn--primary:hover,
+.ps-btn--primary:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+button[class*="btn--primary"]:active,
+button[class*="-btn--primary"]:active,
+.tf-submit:active,
+.vdm-ok:active,
+.succ-okay:active,
+.vld-primary:active {
+  transform: scale(0.98);
+}
+
+.succ-backdrop,
+.vdm-backdrop,
+.cam-backdrop,
+.gem-backdrop,
+.vld-backdrop,
+.acct-modal-backdrop,
+.ps-modal-backdrop,
+.um-modal-backdrop,
+.glm-modal-backdrop,
+.cprod-modal-backdrop,
+[class*="modal-backdrop"] {
+  animation: b247-fade-in var(--motion-fast) ease both;
+}
+
+.succ-modal,
+.vdm-modal,
+.cam-modal,
+.gem-modal,
+.ps-modal,
+.um-modal,
+.glm-modal,
+.cprod-modal {
+  animation: b247-scale-in var(--motion-med) var(--motion-ease-out) both;
+}
+
+.vld-drawer,
+.acct-ledger {
+  animation: b247-slide-right var(--motion-slow) var(--motion-ease-out) both;
+}
+
+.succ-icon {
+  animation: b247-icon-pop var(--motion-slow) var(--motion-ease-out) both;
+}
+
+.app-alert {
+  animation: b247-toast-in var(--motion-med) var(--motion-ease-out) both;
+}
+
+.tbr-table tbody tr,
+.jnr-table tbody tr,
+.bonds-table tbody tr,
+.forex-table tbody tr,
+.loan-table tbody tr,
+.plc-table tbody tr,
+.lc-table tbody tr,
+.um-table tbody tr,
+.glm-table tbody tr,
+.ps-table tbody tr,
+.accounts-table tbody tr,
+.cprod-table tbody tr {
+  transition: background-color var(--motion-fast) ease;
+}
+
+.tbr-table tbody tr.is-selected,
+.jnr-table tbody tr.is-selected {
+  transition:
+    background-color var(--motion-med) ease,
+    box-shadow var(--motion-med) ease;
+  box-shadow: inset 3px 0 0 #1a56be;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+.tf-input {
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-page {
+    animation: b247-fade-in 200ms ease both;
+  }
+
+  .tch-card:hover,
+  .rhub-card:hover,
+  .txh-card:hover,
+  .dth-card:hover,
+  .shell-icon-btn:hover,
+  .shell-user-menu:hover {
+    transform: none;
+  }
+
+  .vld-drawer,
+  .acct-ledger,
+  .succ-modal,
+  .vdm-modal,
+  .cam-modal,
+  .gem-modal {
+    animation: b247-fade-in 180ms ease both;
+  }
+}
