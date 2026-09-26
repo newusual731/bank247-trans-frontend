@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ClosingTillConfirm, TellerConfirmModal } from "../../components/teller/TellerConfirmModals";
 import "../../components/teller/TellerForm.css";
 import "./CashTxnPages.css";
+import "./EnquiryPages.css";
 import "./TellerAdminPages.css";
 
 const PARAM_FIELDS = [
@@ -96,48 +97,155 @@ function AdminFormShell({
   );
 }
 
-/** Teller Account Administration hub */
+type AdminHubCard = {
+  title: string;
+  tone: "purple" | "peach" | "pink" | "navy" | "yellow";
+  icon: "create" | "params" | "details" | "reopen" | "close";
+  recommended?: boolean;
+  to?: string;
+  onClick?: () => void;
+};
+
+/** Teller Account Administration hub — same tile pattern as Teller Cash / Enquiries */
 export function TellerAccountAdminPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const cards: AdminHubCard[] = [
+    {
+      title: "Create Till",
+      to: "/teller/tills/create",
+      tone: "purple",
+      icon: "create",
+      recommended: true,
+    },
+    {
+      title: "Account Parameter Setup",
+      tone: "peach",
+      icon: "params",
+      recommended: true,
+      onClick: () => setDrawerOpen(true),
+    },
+    {
+      title: "Create Till (details)",
+      to: "/teller/tills/create?step=create",
+      tone: "pink",
+      icon: "details",
+    },
+    {
+      title: "Re-open Till",
+      to: "/teller/tills/reopen",
+      tone: "navy",
+      icon: "reopen",
+    },
+    {
+      title: "Close Till",
+      to: "/teller/tills/close",
+      tone: "yellow",
+      icon: "close",
+    },
+  ];
+
   return (
-    <div className="tap">
-      <div className="tap-panel">
-        <header className="tap-head">
-          <h1>Teller Account Administration</h1>
-        </header>
-        <p className="tap-sub">Create tills and configure account parameters for teller operations.</p>
-        <div className="tap-cards">
-          <Link to="/teller/tills/create" className="tap-card">
-            <strong>Create Till</strong>
-            <em>Teller till set-up and create till</em>
-            <span aria-hidden>›</span>
-          </Link>
-          <button type="button" className="tap-card" onClick={() => setDrawerOpen(true)}>
-            <strong>Account Parameter Setup</strong>
-            <em>Overage, shortage, and till balance rules</em>
-            <span aria-hidden>›</span>
-          </button>
-          <Link to="/teller/tills/create?step=create" className="tap-card">
-            <strong>Create Till (details)</strong>
-            <em>Branch, limits, teller number</em>
-            <span aria-hidden>›</span>
-          </Link>
-          <Link to="/teller/tills/reopen" className="tap-card">
-            <strong>Re-open Till</strong>
-            <em>Reactivate a closed till</em>
-            <span aria-hidden>›</span>
-          </Link>
-          <Link to="/teller/tills/close" className="tap-card">
-            <strong>Close Till</strong>
-            <em>Close an active till with reason</em>
-            <span aria-hidden>›</span>
-          </Link>
+    <div className="dth tap">
+      <div className="dth-panel">
+        <h1>Teller Account Administration</h1>
+        <div className="dth-grid">
+          {cards.map((c) => {
+            const body = (
+              <>
+                <span className={`dth-icon is-${c.tone}`} aria-hidden>
+                  <AdminHubIcon name={c.icon} />
+                </span>
+                {c.recommended ? (
+                  <span className="dth-rec">
+                    <AdminBoltIcon />
+                    Recommended
+                  </span>
+                ) : null}
+                <strong>{c.title}</strong>
+                <span className="dth-chev" aria-hidden>
+                  ›
+                </span>
+                <span className="dth-rule" aria-hidden />
+                <em>Bank 24/7</em>
+              </>
+            );
+            if (c.to) {
+              return (
+                <Link key={c.title} to={c.to} className="dth-card">
+                  {body}
+                </Link>
+              );
+            }
+            return (
+              <button key={c.title} type="button" className="dth-card tap-hub-btn" onClick={c.onClick}>
+                {body}
+              </button>
+            );
+          })}
         </div>
       </div>
       {drawerOpen ? <AccountParameterSetupPanel onClose={() => setDrawerOpen(false)} /> : null}
     </div>
   );
+}
+
+function AdminBoltIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M13 2L4 14h7l-1 8 10-14h-7l0-6z" />
+    </svg>
+  );
+}
+
+function AdminHubIcon({ name }: { name: AdminHubCard["icon"] }) {
+  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none" as const };
+  const stroke = "#fff";
+  switch (name) {
+    case "create":
+      return (
+        <svg {...common}>
+          <path d="M12 5v14M5 12h14" stroke={stroke} strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      );
+    case "params":
+      return (
+        <svg {...common}>
+          <path
+            d="M4 7h10M14 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM4 17h6M10 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM20 17h-6M20 7H18"
+            stroke={stroke}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "details":
+      return (
+        <svg {...common}>
+          <rect x="5" y="4" width="14" height="16" rx="2" stroke={stroke} strokeWidth="1.8" />
+          <path d="M8 9h8M8 13h8M8 17h5" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case "reopen":
+      return (
+        <svg {...common}>
+          <path
+            d="M4 12a8 8 0 0 1 13.5-5.8M20 4v5h-5M20 12a8 8 0 0 1-13.5 5.8M4 20v-5h5"
+            stroke={stroke}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "close":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="8" stroke={stroke} strokeWidth="1.8" />
+          <path d="M9 9l6 6M15 9l-6 6" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+  }
 }
 
 function AccountParameterSetupPanel({ onClose }: { onClose: () => void }) {

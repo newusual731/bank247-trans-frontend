@@ -1,78 +1,20 @@
-.tap-panel {
-  background: #fff;
-  border: 1px solid #e8eaed;
-  border-radius: 14px;
-  padding: 1.35rem 1.4rem 1.5rem;
-}
+/* Teller Account Administration — hub uses shared .dth* tiles (EnquiryPages.css) */
 
-.tap-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  margin-bottom: 0.35rem;
-}
-
-.tap-head h1 {
-  margin: 0;
-  font-size: 1.45rem;
-  font-weight: 750;
-  letter-spacing: -0.02em;
-}
-
-.tap-sub {
-  margin: 0 0 1.25rem;
-  color: #6b7280;
-  font-size: 0.88rem;
-}
-
-.tap-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.tap-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  padding: 1.1rem 2.2rem 1.1rem 1.15rem;
-  border: 1px solid #eceef1;
-  border-radius: 12px;
-  background: #fff;
-  text-decoration: none;
-  color: inherit;
-  text-align: left;
+.tap-hub-btn {
+  width: 100%;
   font: inherit;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  text-align: left;
 }
 
-.tap-card:hover {
-  border-color: #fdba74;
+/* Extra tones used on admin hub (beyond Deposit hub) */
+.tap .dth-icon.is-navy {
+  background: #1e3a8a;
 }
 
-.tap-card strong {
-  font-size: 0.95rem;
-}
-
-.tap-card em {
-  font-style: normal;
-  font-size: 0.78rem;
-  color: #9ca3af;
-}
-
-.tap-card span {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #ea580c;
-  font-size: 1.35rem;
-  font-weight: 700;
+.tap .dth-icon.is-yellow {
+  background: #eab308;
+  border-radius: 10px;
 }
 
 .tap-drawer-backdrop {
@@ -162,10 +104,4 @@
 
 .tf-actions--center {
   justify-content: center;
-}
-
-@media (max-width: 720px) {
-  .tap-cards {
-    grid-template-columns: 1fr;
-  }
 }
