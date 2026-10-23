@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./AuditTrailReportPage.css";
+import { ApiError } from "../lib/apiClient";
+import { getAuditEvents } from "../api/domain";
 import { ReportTabs } from "../components/ReportTabs";
 import { AuditTooltip, ExportMenu } from "../components/SharedUiBits";
 
@@ -78,6 +80,51 @@ const ACTIVITY_TYPES = ["Create", "Update", "Delete", "Login", "Export"];
 const STATUSES = ["Successful", "Failed", "Reversed"];
 
 export function AuditTrailReportPage() {
+  const [apiRows, setApiRows] = useState<AuditRow[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getAuditEvents({ size: 50 });
+        if (cancelled) return;
+        const content =
+          res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+            ? (res as { content: Record<string, unknown>[] }).content
+            : Array.isArray(res)
+              ? (res as Record<string, unknown>[])
+              : [];
+        setApiRows(
+          content.map((e) => {
+            const occurred = String(e.occurredAt ?? "");
+            return {
+              date: occurred.slice(0, 10) || "—",
+              time: occurred.slice(11, 16) || "—",
+              user: String(e.actorId ?? "—"),
+              role: "—",
+              module: String(e.module ?? e.sourceService ?? "—"),
+              activityType: String(e.action ?? "—"),
+              details: String(e.resourceType ?? "") + (e.resourceId ? ` ${e.resourceId}` : ""),
+              ip: "—",
+              status: "Successful",
+              createdBy: String(e.actorId ?? "—"),
+              createdDate: occurred.slice(0, 10) || "—",
+            };
+          }),
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Failed to load audit");
+          setApiRows([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [date, setDate] = useState("2025-08-15");
   const [module, setModule] = useState(MODULES[0]);
   const [user, setUser] = useState(USERS[0]);
@@ -95,6 +142,7 @@ export function AuditTrailReportPage() {
       <ReportTabs active="audit" />
 
       <h1>Audit Trail Report</h1>
+      {loadError ? <p className="ctp-error" role="alert">{loadError}</p> : null}
 
       <div className="audit-filters">
         <label className="audit-field">
@@ -181,7 +229,7 @@ export function AuditTrailReportPage() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {(apiRows ?? ROWS).map((row, i) => (
               <tr key={i}>
                 <td className="is-left">
                   <div className="audit-ts">

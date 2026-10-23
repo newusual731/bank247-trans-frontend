@@ -60,6 +60,7 @@ import {
 import {
   CurrencyExchangePage,
   FixedTransferPage,
+  ReverseTransferPage,
   FtModulePage,
   PostingBetweenNgnFcyPage,
   PostingBetweenNgnPage,
@@ -71,6 +72,7 @@ import { TransactionsHubPage } from "./pages/TransactionsHubPage";
 import { TrialBalanceReportPage } from "./pages/TrialBalanceReportPage";
 import { RoleManagementPage, UserManagementPage } from "./pages/UserManagementPage";
 import { WelcomeDashboardPage } from "./pages/WelcomeDashboardPage";
+import { RequireAuth } from "./auth/RequireAuth";
 
 export default function App() {
   return (
@@ -79,7 +81,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        <Route element={<AppShell />}>
+        <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/dashboard" element={<WelcomeDashboardPage />} />
           <Route path="/reports/daily-summary" element={<DailySummaryPage />} />
@@ -124,7 +126,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
-        <Route element={<TellerShell />}>
+        <Route element={<RequireAuth><TellerShell /></RequireAuth>}>
           <Route path="/teller" element={<TellerCashHubPage variant="teller" />} />
           <Route path="/teller/cash" element={<Navigate to="/teller" replace />} />
           <Route path="/teller/cash/mail" element={<TellerCashHubPage variant="mail" />} />
@@ -159,6 +161,7 @@ export default function App() {
           <Route path="/teller/drafts/ledger" element={<BankDraftLedgerPage />} />
           <Route path="/teller/ft" element={<FtModulePage />} />
           <Route path="/teller/ft/fixed" element={<FixedTransferPage />} />
+          <Route path="/teller/ft/reverse" element={<ReverseTransferPage />} />
           <Route path="/teller/transfers/internal-account" element={<TransferInternalPage />} />
           <Route path="/teller/transfers/customer-internal" element={<TransferCustomerInternalPage />} />
           <Route path="/teller/posting/ngn" element={<PostingBetweenNgnPage />} />

@@ -141,3 +141,9 @@
     min-height: auto;
   }
 }
+
+.ctp-error {
+  margin: 1rem 0 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}

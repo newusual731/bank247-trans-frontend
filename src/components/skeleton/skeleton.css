@@ -1,0 +1,103 @@
+@keyframes b247-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.b247-skel {
+  display: inline-block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e8eaed 0%, #f3f4f6 40%, #e8eaed 80%);
+  background-size: 200% 100%;
+  animation: b247-shimmer 1.35s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+.b247-skel.is-block {
+  display: block;
+}
+
+.b247-skel.is-xs {
+  width: 3.2rem;
+  height: 0.7rem;
+}
+.b247-skel.is-sm {
+  width: 5.5rem;
+  height: 0.85rem;
+}
+.b247-skel.is-md {
+  width: 7.5rem;
+  height: 0.85rem;
+}
+.b247-skel.is-label {
+  width: 4.5rem;
+  height: 0.7rem;
+  margin-top: 0.15rem;
+}
+.b247-skel.is-value {
+  width: 6.5rem;
+  height: 1.15rem;
+  margin-top: 0.4rem;
+}
+.b247-skel.is-title {
+  width: 9rem;
+  height: 1rem;
+}
+.b247-skel.is-meta {
+  width: 5rem;
+  height: 0.75rem;
+}
+.b247-skel.is-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.b247-skel.is-pill {
+  width: 3.2rem;
+  height: 1.15rem;
+  border-radius: 999px;
+}
+.b247-skel.is-spark {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-top: 0.45rem;
+  border-radius: 6px;
+}
+.b247-skel.is-bar {
+  display: block;
+  width: 42%;
+  min-width: 28px;
+  min-height: 72px;
+  border-radius: 8px 8px 4px 4px;
+  align-self: center;
+}
+.b247-skel.is-legend {
+  width: 12rem;
+  height: 0.85rem;
+}
+.b247-skel.is-lg {
+  width: 9rem;
+  height: 0.85rem;
+}
+.b247-skel.is-action {
+  width: 10rem;
+  height: 0.85rem;
+}
+
+.b247-skel-row td {
+  vertical-align: middle;
+}
+
+.b247-skel-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.b247-table-wrap.is-loading {
+  opacity: 0.92;
+}

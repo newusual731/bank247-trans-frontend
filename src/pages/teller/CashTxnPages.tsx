@@ -2,6 +2,22 @@ import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { CashTxnNav } from "../../components/teller/CashTxnNav";
 import { useActionFeedback } from "../../components/feedback/useActionFeedback";
+import { ApiError } from "../../lib/apiClient";
+import {
+  acceptTillTransfer,
+  rejectTillTransfer,
+  createTillTransfer,
+  createVaultTransfer,
+  completeApprovedVaultTransfer,
+  depositCash,
+  requestCashReversal,
+  completeCashReversal,
+  completeApprovedCash,
+  getTellerTransaction,
+  getTillTransfer,
+  getVaultTransfer,
+  withdrawCash,
+} from "../../api/teller";
 import "../../components/teller/TellerForm.css";
 import "./CashTxnPages.css";
 
@@ -34,15 +50,21 @@ function SelectField({
 function CashFormShell({
   title,
   children,
-  actionLabel = "Preview",
+  actionLabel = "Submit",
   tabs,
   successMessage,
+  onSubmit,
+  busy,
+  error,
 }: {
   title: string;
   children: ReactNode;
   actionLabel?: string;
   tabs?: ReactNode;
   successMessage?: string;
+  onSubmit?: () => Promise<string | void> | string | void;
+  busy?: boolean;
+  error?: string | null;
 }) {
   const navigate = useNavigate();
   const { showSuccess, feedbackUi } = useActionFeedback();
@@ -61,6 +83,7 @@ function CashFormShell({
             <h1 className="tf-title">{title}</h1>
             {tabs}
             <div className="tf-stack">{children}</div>
+            {error ? <p className="ctp-error" role="alert">{error}</p> : null}
             <div className="tf-actions">
               <button type="button" className="tf-close" onClick={close}>
                 Close
@@ -68,9 +91,25 @@ function CashFormShell({
               <button
                 type="button"
                 className="tf-submit"
-                onClick={() => showSuccess(successMessage ?? `${title} submitted successfully`)}
+                disabled={busy}
+                onClick={async () => {
+                  try {
+                    if (!onSubmit) {
+                      showSuccess(successMessage ?? `${title} submitted successfully`);
+                      return;
+                    }
+                    const msg = await onSubmit();
+                    showSuccess(
+                      typeof msg === "string" && msg
+                        ? msg
+                        : successMessage ?? `${title} submitted successfully`,
+                    );
+                  } catch {
+                    /* page sets error state */
+                  }
+                }}
               >
-                {actionLabel}
+                {busy ? "Working…" : actionLabel}
               </button>
             </div>
           </div>
@@ -86,9 +125,33 @@ export function CashDepositPage({ currency }: { currency: "LCY" | "FCY" }) {
   const [holder, setHolder] = useState("");
   const [ccy, setCcy] = useState(currency === "FCY" ? "USD" : "NGN");
   const [narration, setNarration] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await depositCash({
+        customerAccount: account.trim(),
+        amount: amount.trim(),
+        currency: currency === "LCY" ? "NGN" : ccy,
+        narration: narration.trim() || undefined,
+      });
+      const ref = String(res.reference ?? "");
+      if (ref) {
+        try { await completeApprovedCash(ref); } catch { /* may need checker */ }
+      }
+      return `Deposit accepted${ref ? ` — ${ref}` : ""}`;
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Deposit failed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <CashFormShell title={`${currency} Cash Deposit`}>
+    <CashFormShell title={`${currency} Cash Deposit`} actionLabel="Submit" onSubmit={submit} busy={busy} error={error}>
       <label className="tf-field">
         <span>Enter the credit Account</span>
         <input
@@ -139,14 +202,61 @@ export function CashTillTransferPage({ kind }: { kind: "lcy" | "fcy" }) {
   const [amount, setAmount] = useState("");
   const [ccy, setCcy] = useState(kind === "fcy" ? "USD" : "NGN");
   const [narration, setNarration] = useState("");
+  const [pendingRef, setPendingRef] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const ccyCode = kind === "lcy" ? "NGN" : ccy;
+      const from = fromTill.trim().toUpperCase();
+      const to = toTill.trim();
+      const isVault = from === "VAULT" || to.toUpperCase() === "VAULT" || /vault/i.test(narration);
+      if (isVault) {
+        const tillId = from === "VAULT" ? to : fromTill.trim();
+        const direction = from === "VAULT" ? "VAULT_TO_TILL" : "TILL_TO_VAULT";
+        const res = await createVaultTransfer({
+          direction,
+          tillId,
+          amount: amount.trim(),
+          currency: ccyCode,
+          narration: narration.trim() || undefined,
+        }) as { reference?: string };
+        const ref = String(res.reference ?? "");
+        if (ref) {
+          try { await getVaultTransfer(ref); } catch { /* optional */ }
+          try { await completeApprovedVaultTransfer(ref); } catch { /* may need checker */ }
+        }
+        return `Vault transfer submitted${ref ? ` — ${ref}` : ""} (${direction})`;
+      }
+      const res = await createTillTransfer({
+        destinationTillId: to,
+        amount: amount.trim(),
+        currency: ccyCode,
+        narration: narration.trim() || undefined,
+      }) as { reference?: string };
+      const ref = String(res.reference ?? "");
+      if (ref) {
+        try { await getTillTransfer(ref); } catch { /* optional */ }
+        try { await acceptTillTransfer(ref); } catch { /* receiving till may accept later */ }
+      }
+      return `Till transfer submitted${ref ? ` — ${ref}` : ""}${fromTill ? ` (from ${fromTill})` : ""}`;
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Transfer failed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <CashFormShell title={`${kind === "lcy" ? "LCY" : "FCY"} Till Transfer`} actionLabel="Preview">
+    <CashFormShell title={`${kind === "lcy" ? "LCY" : "FCY"} Till Transfer`} actionLabel="Submit" onSubmit={submit} busy={busy} error={error}>
       <label className="tf-field">
         <span>From Till</span>
         <input
           className="tf-input"
-          placeholder="Enter Till ID"
+          placeholder="Till ID or VAULT"
           value={fromTill}
           onChange={(e) => setFromTill(e.target.value)}
         />
@@ -175,7 +285,56 @@ export function CashTillTransferPage({ kind }: { kind: "lcy" | "fcy" }) {
         <option>EUR</option>
         <option>GBP</option>
       </SelectField>
-      <label className="tf-field tf-field--narration">
+            <label className="tf-field">
+        <span>Pending Transfer Ref (accept / reject)</span>
+        <input
+          className="tf-input"
+          placeholder="Existing transfer reference"
+          value={pendingRef}
+          onChange={(e) => setPendingRef(e.target.value)}
+        />
+      </label>
+      <div className="tf-actions" style={{ marginTop: 8, gap: 8 }}>
+        <button
+          type="button"
+          className="tf-close"
+          disabled={busy || !pendingRef.trim()}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              try { await getTillTransfer(pendingRef.trim()); } catch { /* optional */ }
+              await acceptTillTransfer(pendingRef.trim());
+              return;
+            } catch (e) {
+              setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Accept failed");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Accept pending
+        </button>
+        <button
+          type="button"
+          className="tf-close"
+          disabled={busy || !pendingRef.trim()}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              await rejectTillTransfer(pendingRef.trim());
+            } catch (e) {
+              setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reject failed");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Reject pending
+        </button>
+      </div>
+<label className="tf-field tf-field--narration">
         <span>Enter Narration</span>
         <textarea
           className="tf-textarea"
@@ -235,8 +394,34 @@ export function CashWithdrawalPage({
       </div>
     ) : null;
 
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await withdrawCash({
+        customerAccount: account.trim(),
+        amount: amount.trim(),
+        currency: "NGN",
+        narration: narration.trim() || undefined,
+        chequeNumber: chequeNo.trim() || undefined,
+      });
+      const ref = String(res.reference ?? "");
+      if (ref) {
+        try { await completeApprovedCash(ref); } catch { /* may need checker */ }
+      }
+      return `Withdrawal accepted${ref ? ` — ${ref}` : ""}`;
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Withdrawal failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <CashFormShell title={title} tabs={tabs}>
+    <CashFormShell title={title} tabs={tabs} actionLabel="Submit" onSubmit={submit} busy={busy} error={error}>
       <label className="tf-field">
         <span>Enter the Debit Account</span>
         <input
@@ -288,10 +473,31 @@ export function CashWithdrawalPage({
 export function ReverseCashPage({ kind }: { kind: "deposit" | "withdrawal" }) {
   const [refNo, setRefNo] = useState("");
   const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const ref = refNo.trim();
+      await requestCashReversal(ref);
+      const res = await completeCashReversal(ref);
+      return `Reversal completed${res.reference ? ` — ${res.reference}` : ` — ${ref}`}${reason ? ` (${reason})` : ""}`;
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reversal failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <CashFormShell
       title={`Reverse Cash ${kind === "deposit" ? "Deposit" : "Withdrawal"}`}
       actionLabel="Submit"
+      onSubmit={submit}
+      busy={busy}
+      error={error}
     >
       <label className="tf-field">
         <span>Original Transaction Ref</span>
@@ -320,6 +526,32 @@ export function ReprintCashSlipPage() {
   const { showSuccess, feedbackUi } = useActionFeedback();
   const [refNo, setRefNo] = useState("");
   const [account, setAccount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [slip, setSlip] = useState<Record<string, unknown> | null>(null);
+
+  async function reprint() {
+    setBusy(true);
+    setError(null);
+    setSlip(null);
+    try {
+      const ref = refNo.trim();
+      if (!ref) throw new Error("Transaction reference is required");
+      const tx = (await getTellerTransaction(ref)) as Record<string, unknown>;
+      const acct = String(tx.customerAccount ?? tx.accountNumber ?? "");
+      if (account.trim() && acct && account.trim() !== acct) {
+        throw new Error(`Account mismatch: slip is for ${acct}`);
+      }
+      setSlip(tx);
+      showSuccess(`Cash slip loaded — ${ref}`);
+      window.print();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reprint failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="tf-page ctp">
       {feedbackUi}
@@ -348,20 +580,19 @@ export function ReprintCashSlipPage() {
                 onChange={(e) => setAccount(e.target.value)}
               />
             </label>
+            {slip ? (
+              <pre className="ctp-slip" style={{ fontSize: 12, whiteSpace: "pre-wrap" }}>
+                {JSON.stringify(slip, null, 2)}
+              </pre>
+            ) : null}
+            {error ? <p className="ctp-error" role="alert">{error}</p> : null}
           </div>
           <div className="tf-actions">
             <button type="button" className="tf-close" onClick={() => navigate(-1)}>
               Close
             </button>
-            <button
-              type="button"
-              className="tf-submit"
-              onClick={() => {
-                showSuccess("Cash slip sent to printer successfully");
-                window.print();
-              }}
-            >
-              Reprint
+            <button type="button" className="tf-submit" disabled={busy} onClick={() => void reprint()}>
+              {busy ? "Loading…" : "Reprint"}
             </button>
           </div>
         </div>

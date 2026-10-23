@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getProfitLossReport } from "../api/hubs";
+import { ApiError } from "../lib/apiClient";
 import { useActionFeedback } from "../components/feedback/useActionFeedback";
 import { BRANCH_CODES, COST_CENTERS, CURRENCIES } from "../data/accountTypeOptions";
 import "./PnlReportPage.css";
@@ -34,26 +36,56 @@ export function PnlReportPage() {
   const [branch, setBranch] = useState<string>(BRANCH_CODES[0]);
   const [costCenter, setCostCenter] = useState<string>(COST_CENTERS[0]);
   const [generated, setGenerated] = useState(false);
+  const [apiRows, setApiRows] = useState<Row[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { showSuccess, feedbackUi } = useActionFeedback();
 
   const rows = useMemo(() => {
-    return ROWS.filter((r) => {
+    return (apiRows ?? ROWS).filter((r) => {
       if (category && r.category !== category) return false;
       if (currency && r.currency !== currency) return false;
       return true;
     }).map((r) => ({ ...r, currency }));
-  }, [category, currency]);
+  }, [category, currency, apiRows]);
 
-  const handleGenerate = () => {
-    setGenerated(true);
-    showSuccess("P&L summary generated successfully");
+  const handleGenerate = async () => {
+    setLoadError(null);
+    try {
+      const res = await getProfitLossReport({ businessDate: to || from, branchCode: branch || undefined });
+      const lines =
+        res && typeof res === "object" && "lines" in res && Array.isArray((res as { lines: unknown }).lines)
+          ? (res as { lines: Record<string, unknown>[] }).lines
+          : [];
+      if (lines.length) {
+        setApiRows(
+          lines.map((l) => ({
+            category: String(l.category ?? "Income"),
+            glCode: String(l.glCode ?? "—"),
+            glName: String(l.glName ?? l.glCode ?? "—"),
+            amount: String(l.amount ?? "—"),
+            currency: String(l.currency ?? currency ?? "NGN"),
+          })),
+        );
+      }
+      setGenerated(true);
+      showSuccess("P&L summary generated successfully");
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Generate failed");
+      setGenerated(true);
+    }
   };
+
+  useEffect(() => {
+    void handleGenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="pnr">
       {feedbackUi}
       <ReportTabs active="pnl" />
       <h1>Profit & Loss Report</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
 
       <div className="pnr-filters">
         <div className="pnr-field pnr-field--range">

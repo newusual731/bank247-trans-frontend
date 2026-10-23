@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getHubSummary, type HubSummary } from "../api/hubs";
 import "./TellerCashHubPage.css";
 
 type HubCard = {
@@ -98,11 +100,27 @@ const MAIL_CARDS: HubCard[] = [
 export function TellerCashHubPage({ variant = "teller" }: { variant?: "teller" | "mail" }) {
   const cards = variant === "mail" ? MAIL_CARDS : TELLER_CARDS;
   const subtitle = variant === "mail" ? "United Capital Money Market Fund" : "Bank 24/7";
+  const [summary, setSummary] = useState<HubSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await getHubSummary();
+        if (!cancelled) setSummary(s);
+      } catch { /* hub stays navigational */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="tch">
       <div className="tch-panel">
         <h1>Teller Cash</h1>
+        {summary ? (
+          <p className="tch-summary" aria-live="polite">
+            Tills {summary.tillCount} · Mine {summary.myTillCount} · Alerts {summary.notificationCount} · Today txns {summary.recentTxnCount}
+          </p>
+        ) : null}
         <div className="tch-grid">
           {cards.map((card) => (
             <Link key={card.title} to={card.to} className="tch-card">

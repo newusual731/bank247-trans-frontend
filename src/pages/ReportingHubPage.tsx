@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getHubSummary, type HubSummary } from "../api/hubs";
 import type { ReactNode } from "react";
 import "./ReportingHubPage.css";
 
@@ -70,10 +72,27 @@ const REPORTS: ReportCard[] = [
 
 /** Same hub tile pattern as Teller Cash (Create Individual 1). */
 export function ReportingHubPage() {
+  const [summary, setSummary] = useState<HubSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await getHubSummary();
+        if (!cancelled) setSummary(s);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="rhub">
       <div className="rhub-panel">
         <h1>REPORTING</h1>
+        {summary ? (
+          <p className="rhub-summary" aria-live="polite">
+            Trial-balance lines {summary.trialBalanceLines} · Today txns {summary.recentTxnCount} · Alerts {summary.notificationCount}
+          </p>
+        ) : null}
         <div className="rhub-grid">
           {REPORTS.map((r) => (
             <Link key={r.to} to={r.to} className="rhub-card">

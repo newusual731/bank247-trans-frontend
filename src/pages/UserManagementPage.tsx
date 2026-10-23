@@ -1,9 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FilterDropdown } from "../components/FilterDropdown";
 import { IAM_PERMISSION_CATALOG, STAFF_ROLES, USER_STATUSES } from "../data/iamOptions";
 import "./UserManagementPage.css";
+import { listIamUsers, listIamRoles, listIamPermissions } from "../api/domain";
+import { createIamRole, createIamUser, submitIamRole, applyIamRole, submitIamUserCreate, applyIamUserCreate, disableIamUser } from "../api/iam";
+import { ApiError } from "../lib/apiClient";
 import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
+import { ConfirmActionModal } from "../components/feedback/ConfirmActionModal";
 
 type UserRow = {
   id: string;
@@ -54,23 +58,80 @@ export function UserManagementPage() {
     | { kind: "add" }
     | { kind: "edit"; row: UserRow }
     | { kind: "view"; row: UserRow }
+    | { kind: "disable"; row: UserRow }
     | null;
   const [modal, setModal] = useState<ModalState>(null);
+  const [apiRows, setApiRows] = useState<UserRow[] | null>(null);
+  const [roleOptions, setRoleOptions] = useState<string[]>(STAFF_ROLES);
+  const [iamError, setIamError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [usersRes, rolesRes] = await Promise.all([listIamUsers({ size: 50 }), listIamRoles()]);
+        if (cancelled) return;
+        const content =
+          usersRes && typeof usersRes === "object" && "content" in usersRes && Array.isArray((usersRes as { content: unknown }).content)
+            ? (usersRes as { content: Record<string, unknown>[] }).content
+            : Array.isArray(usersRes)
+              ? (usersRes as Record<string, unknown>[])
+              : [];
+        if (content.length) {
+          setApiRows(
+            content.map((u, i) => ({
+              id: String(u.id ?? u.userId ?? `U-${i}`),
+              fullName: String(u.fullName ?? u.displayName ?? u.name ?? "—"),
+              userName: String(u.username ?? u.userName ?? "—"),
+              email: String(u.email ?? "—"),
+              role: String(
+                (Array.isArray(u.roles) && u.roles[0]
+                  ? typeof u.roles[0] === "object"
+                    ? String((u.roles[0] as { name?: string; code?: string }).name ?? (u.roles[0] as { code?: string }).code ?? "—")
+                    : String(u.roles[0])
+                  : String(u.role ?? u.primaryRole ?? "—")),
+              ),
+              status: String(u.status ?? (u.active === false ? "Inactive" : "Active")),
+              lastLogin: String(u.lastLoginAt ?? u.lastLogin ?? "—"),
+            })),
+          );
+        }
+        const rolesList = Array.isArray(rolesRes)
+          ? rolesRes
+          : rolesRes && typeof rolesRes === "object" && "content" in rolesRes && Array.isArray((rolesRes as { content: unknown }).content)
+            ? (rolesRes as { content: Record<string, unknown>[] }).content
+            : [];
+        if (rolesList.length) {
+          const codes = rolesList
+            .map((r) => String((r as Record<string, unknown>).name ?? (r as Record<string, unknown>).code ?? ""))
+            .filter(Boolean);
+          if (codes.length) setRoleOptions(codes);
+        }
+      } catch (e) {
+        if (!cancelled) setIamError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "IAM load failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const rows = useMemo(() => {
-    return ROWS.filter((r) => (status ? r.status === status : true));
-  }, [status]);
+    const source = apiRows ?? ROWS;
+    return source.filter((r) => (status && status !== "All" ? r.status === status : true));
+  }, [status, apiRows]);
 
   return (
     <div className="um">
       <h1>User Management</h1>
+      {iamError ? <p className="um-error" role="alert">{iamError}</p> : null}
 
       <div className="um-filters">
         <label className="um-field">
           <span>Role</span>
           <div className="um-select">
             <select value={role} onChange={(e) => setRole(e.target.value)}>
-              {STAFF_ROLES.map((o) => (
+              {roleOptions.map((o) => (
                 <option key={o}>{o}</option>
               ))}
             </select>
@@ -144,6 +205,8 @@ export function UserManagementPage() {
                     <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
                     <span aria-hidden>·</span>
                     <button type="button" onClick={() => setModal({ kind: "edit", row })}>Edit</button>
+                    <span aria-hidden>·</span>
+                    <button type="button" className="is-danger" onClick={() => setModal({ kind: "disable", row })}>Disable</button>
                   </div>
                 </td>
               </tr>
@@ -174,6 +237,29 @@ export function UserManagementPage() {
           onClose={() => setModal(null)}
         />
       ) : null}
+      {modal?.kind === "disable" ? (
+        <ConfirmActionModal
+          title="Disable User ?"
+          message={`Do you want to disable ${modal.row.userName}?`}
+          tone="danger"
+          confirmLabel="YES"
+          onConfirm={() => {
+            void (async () => {
+              try {
+                await disableIamUser(modal.row.id, "Disabled from user management UI");
+                setModal(null);
+                setApiRows((prev) =>
+                  (prev ?? []).map((r) => (r.id === modal.row.id ? { ...r, status: "Disabled" } : r)),
+                );
+              } catch (e) {
+                setIamError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Disable failed");
+                setModal(null);
+              }
+            })();
+          }}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -190,6 +276,35 @@ function AddUserModal({
   const [fullName, setFullName] = useState(initial?.fullName ?? "Akinola Oluwole Dada");
   const [username, setUsername] = useState(initial?.userName ?? "Akinola1234");
   const [email, setEmail] = useState(initial?.email ?? "akinola@b247.com");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function saveUser() {
+    setBusy(true);
+    setError(null);
+    try {
+      const parts = fullName.trim().split(/\s+/);
+      const firstName = parts[0] || "Staff";
+      const lastName = parts.slice(1).join(" ") || "User";
+      const created = await createIamUser({
+        username: username.trim(),
+        email: email.trim(),
+        firstName,
+        lastName,
+        mfaRequired: false,
+      }) as { id?: string };
+      if (created?.id) {
+        try { await submitIamUserCreate(created.id); } catch { /* maker */ }
+        try { await applyIamUserCreate(created.id); } catch { /* checker */ }
+      }
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Create user failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const [role, setRole] = useState<string>(initial?.role ?? "Admin");
   const [password, setPassword] = useState("********");
   const [confirm, setConfirm] = useState("*******");
@@ -204,6 +319,7 @@ function AddUserModal({
         aria-labelledby="add-user-title"
         onClick={(e) => e.stopPropagation()}
       >
+        {error ? <p role="alert">{error}</p> : null}
         <header className="um-modal-head">
           <div>
             <h2 id="add-user-title">{mode === "edit" ? "Edit User" : "Add New User"}</h2>
@@ -274,8 +390,8 @@ function AddUserModal({
             <button type="button" className="um-btn um-btn--outline" onClick={onClose}>
               Post
             </button>
-            <button type="button" className="um-btn um-btn--primary" onClick={onClose}>
-              {mode === "edit" ? "Save" : "Add User"}
+            <button type="button" className="um-btn um-btn--primary" disabled={busy} onClick={() => void saveUser()}>
+              {busy ? "Saving…" : mode === "edit" ? "Save" : "Add User"}
             </button>
           </div>
         </footer>
@@ -289,15 +405,63 @@ export function RoleManagementPage() {
   const [description, setDescription] = useState("Finance Officer");
   const [permOpen, setPermOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(["gl.read", "ledger.read", "report.read"]);
+  const [catalog, setCatalog] = useState<string[]>(IAM_PERMISSION_CATALOG as unknown as string[]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await listIamPermissions();
+        const list = Array.isArray(res)
+          ? res
+          : res && typeof res === "object" && "content" in res
+            ? (res as { content: Record<string, unknown>[] }).content
+            : [];
+        const codes = (list as Record<string, unknown>[])
+          .map((p) => String(p.code ?? p.permissionCode ?? ""))
+          .filter(Boolean);
+        if (!cancelled && codes.length) setCatalog(codes);
+      } catch { /* keep static catalog */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const togglePerm = (code: string) => {
     setSelected((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   };
 
+  async function saveRole() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const code = roleName.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "_").slice(0, 40) || "ROLE";
+      const created = await createIamRole({
+        code,
+        name: roleName.trim(),
+        description: description.trim() || undefined,
+        riskLevel: "MEDIUM",
+        permissionCodes: selected,
+      }) as { id?: string };
+      const id = created?.id;
+      if (id) {
+        try { await submitIamRole(id); } catch { /* maker step */ }
+        try { await applyIamRole(id); } catch { /* checker may be separate */ }
+      }
+      setMsg(`Role ${roleName} saved`);
+    } catch (e) {
+      setMsg(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="um rm">
       <h1>Role Management</h1>
-      <button type="button" className="um-btn um-btn--primary rm-add" onClick={() => window.alert("Saved (MVP)")}>
+      {msg ? <p role="alert">{msg}</p> : null}
+      <button type="button" className="um-btn um-btn--primary rm-add" disabled={busy} onClick={() => void saveRole()}>
         + Add Role
       </button>
 
@@ -323,7 +487,7 @@ export function RoleManagementPage() {
           </button>
           {permOpen ? (
             <ul className="rm-perm-menu">
-              {IAM_PERMISSION_CATALOG.map((code) => (
+              {catalog.map((code) => (
                 <li key={code}>
                   <label>
                     <input
@@ -355,8 +519,8 @@ export function RoleManagementPage() {
           <Link to="/settings/users" className="um-btn um-btn--ghost">
             Cancel
           </Link>
-          <button type="button" className="um-btn um-btn--primary" onClick={() => window.alert("Saved (MVP)")}>
-            Add Role
+          <button type="button" className="um-btn um-btn--primary" disabled={busy} onClick={() => void saveRole()}>
+            {busy ? "Saving…" : "Add Role"}
           </button>
         </footer>
       </section>

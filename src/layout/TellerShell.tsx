@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatedOutlet } from "../components/AnimatedOutlet";
 import { useProfileAvatar } from "../hooks/useProfileAvatar";
+import { useAuth } from "../auth/AuthContext";
 import "./TellerShell.css";
 
 type TellerNavItem = {
@@ -48,6 +49,7 @@ export function TellerShell() {
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
   const { avatarUrl } = useProfileAvatar();
+  const { username, logout } = useAuth();
 
   useEffect(() => {
     setNavOpen(false);
@@ -123,7 +125,7 @@ export function TellerShell() {
                 {avatarUrl ? <img src={avatarUrl} alt="" /> : null}
               </div>
               <div className="tshell-user-meta">
-                <strong>Sam Kola</strong>
+                <strong>{username || "Staff"}</strong>
                 <span>Owner</span>
               </div>
             </button>
@@ -131,7 +133,7 @@ export function TellerShell() {
               type="button"
               className="tshell-logout"
               aria-label="Log out"
-              onClick={() => navigate("/login")}
+              onClick={() => { logout(); navigate("/login"); }}
             >
               <LogoutIcon />
             </button>

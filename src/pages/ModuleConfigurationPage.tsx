@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { getTellerAdminParameters, putTellerAdminParameters } from "../api/teller";
+import { ApiError } from "../lib/apiClient";
 import { Link } from "react-router-dom";
 import { GenerationSuccessModal } from "../components/SharedUiBits";
 import "./ModuleConfigurationPage.css";
@@ -63,6 +65,45 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
   const [fcyDebit, setFcyDebit] = useState("");
   const [branch, setBranch] = useState("");
   const [done, setDone] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function loadParams(code: string) {
+    if (!code.trim()) return;
+    try {
+      const res = await getTellerAdminParameters(code.trim());
+      if (res && typeof res === "object") {
+        const r = res as Record<string, unknown>;
+        if (r.lcyDebitLimit != null) setLcyDebit(String(r.lcyDebitLimit));
+        if (r.lcyCreditLimit != null) setLcyCredit(String(r.lcyCreditLimit));
+        if (r.fcyDebitLimit != null) setFcyDebit(String(r.fcyDebitLimit));
+        if (r.fcyCreditLimit != null) setFcyCredit(String(r.fcyCreditLimit));
+        if (r.userId != null) setUserId(String(r.userId));
+      }
+    } catch {
+      /* keep form empty if branch has no params yet */
+    }
+  }
+
+  async function saveParams() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await putTellerAdminParameters({
+        branchCode: branch.trim(),
+        userId: userId.trim() || undefined,
+        lcyDebitLimit: lcyDebit,
+        lcyCreditLimit: lcyCredit,
+        fcyDebitLimit: fcyDebit,
+        fcyCreditLimit: fcyCredit,
+      });
+      setDone(true);
+    } catch (e) {
+      setSaveError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (done) {
     return (
@@ -124,15 +165,14 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
           <span>User Branch Code</span>
           <input
             placeholder="Enter Branch Code"
-            value={branch}
-            onChange={(e) => setBranch(e.target.value)}
+            value={branch} onChange={(e) => { setBranch(e.target.value); void loadParams(e.target.value); }}
           />
         </label>
         <footer>
           <button type="button" className="mcfg-close" onClick={onClose}>
             Close
           </button>
-          <button type="button" className="mcfg-submit" onClick={() => setDone(true)}>
+          <button type="button" className="mcfg-submit" onClick={() => void saveParams()}>
             Submit
           </button>
         </footer>

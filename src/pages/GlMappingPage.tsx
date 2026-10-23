@@ -1,153 +1,164 @@
-import { useMemo, useState } from "react";
-import { FilterDropdown } from "../components/FilterDropdown";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { GlModuleTabs } from "../components/GlModuleTabs";
-import {
-  CURRENCIES,
-  GL_ACCOUNT_CLASSES,
-  GL_CODE_OPTIONS,
-  GL_LEDGER_ROLES,
-} from "../data/accountTypeOptions";
-import { CURRENCY_CODES } from "../data/filterDropdownOptions";
 import "./GlMappingPage.css";
+import "./GlEntryModals.css";
 import { ViewDetailsModal } from "../components/feedback/ViewDetailsModal";
+import { useActionFeedback } from "../components/feedback/useActionFeedback";
+import { ApiError } from "../lib/apiClient";
+import {
+  activateProductGlMapping,
+  createProductGlMapping,
+  deactivateProductGlMapping,
+  listGlAccounts,
+  searchProductGlMappings,
+  updateProductGlMapping,
+  type GlAccountSummary,
+  type ProductGlMapping,
+  type ProductGlRole,
+} from "../api/ledger";
 
 type MappingRow = {
+  id: string;
   productType: string;
   productName: string;
   glAccountType: string;
+  glRole: ProductGlRole;
   glCode: string;
   glName: string;
   currency: string;
   status: string;
 };
 
-/** Product types shown on GL Mapping list (Figma rows). */
-const MAPPING_PRODUCT_TYPES = [
-  "Fixed Deposit",
-  "Treasury Bill",
-  "Loan",
-  "Bond",
-  "Placement",
-] as const;
+type ModalState =
+  | { kind: "add" }
+  | { kind: "edit"; row: MappingRow }
+  | { kind: "view"; row: MappingRow }
+  | null;
 
-const PRODUCT_NAMES = ["90 Days - Fixed Deposit", "TB 180", "BOND-1YR"] as const;
-const STATUSES = ["Active", "Inactive"] as const;
+const PRODUCT_TYPES = ["Fixed Deposit", "Treasury Bill", "Loan", "Bond", "Placement"] as const;
+const CURRENCIES = ["NGN", "USD", "EUR"] as const;
+const STATUS_FILTERS = ["All", "ACTIVE", "INACTIVE"] as const;
+const ROLE_FILTERS = ["All", "PRINCIPAL", "INTEREST", "CHARGES"] as const;
+const PAGE_SIZE = 20;
 
-const ROWS: MappingRow[] = [
-  {
-    productType: "Fixed Deposit",
-    productName: "90 Days FD",
-    glAccountType: "Principal GL",
-    glCode: "11001",
-    glName: "Fixed Deposit Receivable",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Fixed Deposit",
-    productName: "90 Days FD",
-    glAccountType: "Interest GL",
-    glCode: "40011",
-    glName: "Interest Payable",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Treasury Bill",
-    productName: "TB 180",
-    glAccountType: "Principal GL",
-    glCode: "12001",
-    glName: "Treasury Bill Control",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Loan",
-    productName: "90 Days FD",
-    glAccountType: "Interest GL",
-    glCode: "40011",
-    glName: "Loan Interest Income",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Fixed Deposit",
-    productName: "90 Days FD",
-    glAccountType: "Principal GL",
-    glCode: "11001",
-    glName: "Fixed Deposit Receivable",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Treasury Bill",
-    productName: "TB 180",
-    glAccountType: "Interest GL",
-    glCode: "40011",
-    glName: "Interest Payable",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Loan",
-    productName: "90 Days FD",
-    glAccountType: "Principal GL",
-    glCode: "12001",
-    glName: "Treasury Bill Control",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Fixed Deposit",
-    productName: "90 Days FD",
-    glAccountType: "Interest GL",
-    glCode: "40011",
-    glName: "Loan Interest Income",
-    currency: "NGN",
-    status: "Active",
-  },
-  {
-    productType: "Treasury Bill",
-    productName: "TB 180",
-    glAccountType: "Principal GL",
-    glCode: "11001",
-    glName: "Fixed Deposit Receivable",
-    currency: "NGN",
-    status: "Active",
-  },
-];
+const ROLE_LABEL: Record<ProductGlRole, string> = {
+  PRINCIPAL: "Principal GL",
+  INTEREST: "Interest GL",
+  CHARGES: "Charges GL",
+};
+
+function mapRow(m: ProductGlMapping): MappingRow {
+  return {
+    id: m.id,
+    productType: m.productType,
+    productName: m.productName,
+    glRole: m.glRole,
+    glAccountType: ROLE_LABEL[m.glRole] ?? m.glRole,
+    glCode: m.glCode,
+    glName: m.glName || m.glCode,
+    currency: m.currency,
+    status: m.status,
+  };
+}
 
 export function GlMappingPage() {
-  const [productType, setProductType] = useState<string>(MAPPING_PRODUCT_TYPES[0]);
-  const [glClass, setGlClass] = useState<string>("Income");
-  const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
-  const [status, setStatus] = useState<string>(STATUSES[0]);
-  type ModalState =
-    | { kind: "add" }
-    | { kind: "edit"; row: MappingRow }
-    | { kind: "view"; row: MappingRow }
-    | null;
+  const [rows, setRows] = useState<MappingRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
+  const [productType, setProductType] = useState<string>("All");
+  const [glRole, setGlRole] = useState<string>("All");
+  const [currency, setCurrency] = useState<string>("All");
+  const [status, setStatus] = useState<string>("All");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { showSuccess, feedbackUi } = useActionFeedback();
 
-  const rows = useMemo(() => {
-    return ROWS.filter((r) => {
-      if (productType && r.productType !== productType) return false;
-      if (status && r.status !== status) return false;
-      return true;
-    });
-  }, [productType, status]);
+  const fromIdx = totalElements === 0 ? 0 : page * PAGE_SIZE + 1;
+  const toIdx = Math.min((page + 1) * PAGE_SIZE, totalElements);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [productType, glRole, currency, status, debouncedSearch]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await searchProductGlMappings({
+          page,
+          size: PAGE_SIZE,
+          productType: productType !== "All" ? productType : undefined,
+          glRole: glRole !== "All" ? glRole : undefined,
+          currency: currency !== "All" ? currency : undefined,
+          status: status !== "All" ? status : undefined,
+          q: debouncedSearch || undefined,
+        });
+        if (cancelled) return;
+        setRows((res.content ?? []).map(mapRow));
+        setTotalPages(Math.max(1, res.totalPages || 1));
+        setTotalElements(res.totalElements ?? 0);
+      } catch (e) {
+        if (!cancelled) {
+          setRows([]);
+          setTotalElements(0);
+          setTotalPages(1);
+          setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to load mappings");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [productType, glRole, currency, status, debouncedSearch, page, refreshKey]);
+
+  function exportCsv() {
+    const header = ["Product Type", "Product Name", "GL Account Type", "GL Code", "GL Name", "Currency", "Status"];
+    const lines = [
+      header.join(","),
+      ...rows.map((r) =>
+        [r.productType, r.productName, r.glAccountType, r.glCode, r.glName, r.currency, r.status]
+          .map((v) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v))
+          .join(","),
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "gl-product-mappings.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="glm">
+      {feedbackUi}
       <GlModuleTabs />
       <h1>GL Mapping</h1>
+      {error ? <p role="alert">{error}</p> : null}
 
       <div className="glm-filters">
         <label className="glm-field">
           <span>Product Type</span>
           <div className="glm-select">
             <select value={productType} onChange={(e) => setProductType(e.target.value)}>
-              {MAPPING_PRODUCT_TYPES.map((o) => (
+              <option value="All">All</option>
+              {PRODUCT_TYPES.map((o) => (
                 <option key={o}>{o}</option>
               ))}
             </select>
@@ -155,11 +166,13 @@ export function GlMappingPage() {
           </div>
         </label>
         <label className="glm-field">
-          <span>GL Account Type</span>
+          <span>GL Role</span>
           <div className="glm-select">
-            <select value={glClass} onChange={(e) => setGlClass(e.target.value)}>
-              {GL_ACCOUNT_CLASSES.map((o) => (
-                <option key={o}>{o}</option>
+            <select value={glRole} onChange={(e) => setGlRole(e.target.value)}>
+              {ROLE_FILTERS.map((o) => (
+                <option key={o} value={o}>
+                  {o === "All" ? "All" : ROLE_LABEL[o as ProductGlRole]}
+                </option>
               ))}
             </select>
             <ChevronDown />
@@ -169,6 +182,7 @@ export function GlMappingPage() {
           <span>Currency</span>
           <div className="glm-select">
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              <option value="All">All</option>
               {CURRENCIES.map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -180,7 +194,7 @@ export function GlMappingPage() {
           <span>Status</span>
           <div className="glm-select">
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              {STATUSES.map((o) => (
+              {STATUS_FILTERS.map((o) => (
                 <option key={o}>{o}</option>
               ))}
             </select>
@@ -194,7 +208,20 @@ export function GlMappingPage() {
           +Add New Mapping
         </button>
         <div className="glm-actions-right">
-          <button type="button" className="glm-btn glm-btn--export" onClick={() => window.print()}>
+          <label className="glm-field glm-field--search">
+            <span className="sr-only">Search</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search product / GL"
+            />
+          </label>
+          <button
+            type="button"
+            className="glm-btn glm-btn--export"
+            onClick={exportCsv}
+            disabled={loading || rows.length === 0}
+          >
             <ExportIcon />
             Export
           </button>
@@ -214,210 +241,286 @@ export function GlMappingPage() {
               <th>GL Account Type</th>
               <th>GL Code</th>
               <th>GL Name</th>
-              <th>
-                Currency <ChevronDown />
-              </th>
+              <th>Currency</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr key={i}>
-                <td>{row.productType}</td>
-                <td>{row.productName}</td>
-                <td>{row.glAccountType}</td>
-                <td>{row.glCode}</td>
-                <td>{row.glName}</td>
-                <td>{row.currency}</td>
-                <td>{row.status}</td>
-                <td>
-                  <div className="glm-row-actions">
-                    <button type="button" onClick={() => setModal({ kind: "view", row })}>View</button>
-                    <span aria-hidden>·</span>
-                    <button type="button" className="glm-edit" onClick={() => setModal({ kind: "edit", row })}>
-                      Edit <ChevronDown />
-                    </button>
-                  </div>
+            {loading ? (
+              <tr>
+                <td colSpan={8} style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem" }}>
+                  Loading…
                 </td>
               </tr>
-            ))}
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={{ textAlign: "center", color: "#6b7280", padding: "1.5rem" }}>
+                  No mappings yet. Use +Add New Mapping.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.productType}</td>
+                  <td>{row.productName}</td>
+                  <td>{row.glAccountType}</td>
+                  <td>{row.glCode}</td>
+                  <td>{row.glName}</td>
+                  <td>{row.currency}</td>
+                  <td>{row.status}</td>
+                  <td>
+                    <div className="glm-row-actions">
+                      <button type="button" onClick={() => setModal({ kind: "view", row })}>
+                        View
+                      </button>
+                      <span aria-hidden>·</span>
+                      <button type="button" className="glm-edit" onClick={() => setModal({ kind: "edit", row })}>
+                        Edit
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {modal?.kind === "add" || modal?.kind === "edit" ? (
-        <AddMappingModal
-          mode={modal.kind}
-          initial={modal.kind === "edit" ? modal.row : undefined}
-          onClose={() => setModal(null)}
-        />
-      ) : null}
-      {modal?.kind === "view" ? (
-        <ViewDetailsModal
-          title="View GL Mapping"
-          fields={[
-            { label: "Product Type", value: modal.row.productType },
-            { label: "Product Name", value: modal.row.productName },
-            { label: "GL Account Type", value: modal.row.glAccountType },
-            { label: "GL Code", value: modal.row.glCode },
-            { label: "GL Name", value: modal.row.glName },
-            { label: "Currency", value: modal.row.currency },
-            { label: "Status", value: modal.row.status },
-          ]}
-          onClose={() => setModal(null)}
-        />
-      ) : null}
+      <div className="glm-pager">
+        <span>{loading ? "…" : totalElements === 0 ? "0 results" : `${fromIdx}–${toIdx} of ${totalElements}`}</span>
+        <div className="glm-pager-actions">
+          <button type="button" disabled={page <= 0 || loading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            Previous
+          </button>
+          <span>
+            Page {totalElements === 0 ? 0 : page + 1} of {totalElements === 0 ? 0 : totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page + 1 >= totalPages || loading || totalElements === 0}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {modal?.kind === "add" || modal?.kind === "edit"
+        ? createPortal(
+            <AddMappingModal
+              mode={modal.kind}
+              initial={modal.kind === "edit" ? modal.row : undefined}
+              onClose={() => setModal(null)}
+              onDone={async (message) => {
+                showSuccess(message);
+                setModal(null);
+                setRefreshKey((k) => k + 1);
+              }}
+            />,
+            document.body,
+          )
+        : null}
+      {modal?.kind === "view"
+        ? createPortal(
+            <ViewDetailsModal
+              title="View GL Mapping"
+              fields={[
+                { label: "Product Type", value: modal.row.productType },
+                { label: "Product Name", value: modal.row.productName },
+                { label: "GL Account Type", value: modal.row.glAccountType },
+                { label: "GL Code", value: modal.row.glCode },
+                { label: "GL Name", value: modal.row.glName },
+                { label: "Currency", value: modal.row.currency },
+                { label: "Status", value: modal.row.status },
+              ]}
+              onClose={() => setModal(null)}
+            />,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
 
 function AddMappingModal({
-  onClose,
-  mode = "add",
+  mode,
   initial,
+  onClose,
+  onDone,
 }: {
+  mode: "add" | "edit";
+  initial?: MappingRow;
   onClose: () => void;
-  mode?: "add" | "edit";
-  initial?: (typeof ROWS)[number];
+  onDone: (message: string) => void | Promise<void>;
 }) {
-  const [productType, setProductType] = useState<string>(initial?.productType ?? MAPPING_PRODUCT_TYPES[0]);
-  const [productName, setProductName] = useState<string>(initial?.productName ?? PRODUCT_NAMES[0]);
-  const [glRole, setGlRole] = useState<string>(initial?.glAccountType ?? GL_LEDGER_ROLES[0]);
-  const [glCode, setGlCode] = useState<string>(initial?.glCode ?? GL_LEDGER_ROLES[0]);
-  const [currency, setCurrency] = useState<string>(initial?.currency ?? CURRENCY_CODES[0]);
-  const [active, setActive] = useState((initial?.status ?? "Active") === "Active");
+  const isEdit = mode === "edit";
+  const [productType, setProductType] = useState(initial?.productType ?? PRODUCT_TYPES[0]);
+  const [productName, setProductName] = useState(initial?.productName ?? "");
+  const [glRole, setGlRole] = useState<ProductGlRole>(initial?.glRole ?? "PRINCIPAL");
+  const [glCode, setGlCode] = useState(initial?.glCode ?? "");
+  const [currency, setCurrency] = useState(initial?.currency ?? "NGN");
+  const [status, setStatus] = useState(initial?.status?.toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE");
+  const [glOptions, setGlOptions] = useState<GlAccountSummary[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await listGlAccounts({ status: "ACTIVE", size: 100 });
+        if (cancelled) return;
+        setGlOptions((res.content ?? []).filter((g) => g.postable !== false));
+      } catch {
+        if (!cancelled) setGlOptions([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function submit() {
+    setError(null);
+    if (isEdit && initial) {
+      setBusy(true);
+      try {
+        await updateProductGlMapping(initial.id, {
+          productName: productName.trim(),
+          glRole,
+          glCode: glCode.trim().toUpperCase(),
+          currency,
+        });
+        if (status === "ACTIVE" && initial.status.toUpperCase() !== "ACTIVE") {
+          await activateProductGlMapping(initial.id);
+        } else if (status === "INACTIVE" && initial.status.toUpperCase() !== "INACTIVE") {
+          await deactivateProductGlMapping(initial.id);
+        }
+        await onDone(`Mapping updated for ${productName.trim() || initial.productName}`);
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Update failed");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
+    if (!productName.trim() || !glCode.trim()) {
+      setError("Product name and GL code are required");
+      return;
+    }
+    setBusy(true);
+    try {
+      await createProductGlMapping({
+        productType,
+        productName: productName.trim(),
+        glRole,
+        glCode: glCode.trim().toUpperCase(),
+        currency,
+      });
+      await onDone(`Mapping created for ${productName.trim()}`);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Create failed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <div className="glm-modal-backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="glm-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-mapping-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="glm-modal-head">
-          <div>
-            <h2 id="add-mapping-title">{mode === "edit" ? "Edit Mapping" : "Add New Mapping"}</h2>
-            <h3 className="glm-modal-sub">Mapping Details</h3>
-          </div>
-          <button type="button" className="glm-modal-close" onClick={onClose} aria-label="Close">
+    <div className="gem-backdrop glm-gem-backdrop" role="presentation" onClick={onClose}>
+      <div className="gem-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <header>
+          <h2>{isEdit ? "EDIT MAPPING" : "ADD NEW MAPPING"}</h2>
+          <button type="button" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
+        {error ? (
+          <p role="alert" className="ctp-error">
+            {error}
+          </p>
+        ) : null}
 
-        <div className="glm-modal-grid">
-          <div className="glm-field">
+        <div className="gem-grid">
+          <label>
             <span>Product Type</span>
-            <FilterDropdown
-              aria-label="Product type"
-              className="glm-fdrop"
-              triggerClassName="glm-fdrop-trigger"
-              options={MAPPING_PRODUCT_TYPES}
+            <select
               value={productType}
-              onSelect={setProductType}
-              trigger={
-                <>
-                  <span className="glm-fdrop-value">{productType}</span>
-                  <ChevronDown />
-                </>
-              }
-            />
-          </div>
-          <div className="glm-field">
-            <span>Product Name</span>
-            <FilterDropdown
-              aria-label="Product name"
-              className="glm-fdrop"
-              triggerClassName="glm-fdrop-trigger"
-              options={PRODUCT_NAMES}
-              value={productName}
-              onSelect={setProductName}
-              trigger={
-                <>
-                  <span className="glm-fdrop-value">{productName}</span>
-                  <ChevronDown />
-                </>
-              }
-            />
-          </div>
-          <div className="glm-field">
-            <span>GL Account Type</span>
-            <FilterDropdown
-              aria-label="GL account type"
-              className="glm-fdrop"
-              triggerClassName="glm-fdrop-trigger"
-              options={GL_LEDGER_ROLES}
-              value={glRole}
-              onSelect={setGlRole}
-              trigger={
-                <>
-                  <span className="glm-fdrop-value">{glRole}</span>
-                  <ChevronDown />
-                </>
-              }
-            />
-          </div>
-          <div className="glm-field">
-            <span>GL Code</span>
-            <FilterDropdown
-              aria-label="GL code"
-              className="glm-fdrop"
-              triggerClassName="glm-fdrop-trigger"
-              options={[...GL_LEDGER_ROLES, ...GL_CODE_OPTIONS]}
-              value={glCode}
-              onSelect={setGlCode}
-              trigger={
-                <>
-                  <span className="glm-fdrop-value">{glCode}</span>
-                  <ChevronDown />
-                </>
-              }
-            />
-          </div>
-          <div className="glm-field">
-            <span>Currency</span>
-            <FilterDropdown
-              aria-label="Currency"
-              className="glm-fdrop"
-              triggerClassName="glm-fdrop-trigger"
-              options={CURRENCY_CODES}
-              value={currency}
-              onSelect={setCurrency}
-              trigger={
-                <>
-                  <span className="glm-fdrop-value">{currency}</span>
-                  <ChevronDown />
-                </>
-              }
-            />
-          </div>
-          <div className="glm-field glm-toggle-field">
-            <span>Status</span>
-            <button
-              type="button"
-              className={`glm-toggle${active ? " is-on" : ""}`}
-              onClick={() => setActive((v) => !v)}
-              aria-pressed={active}
+              onChange={(e) => setProductType(e.target.value)}
+              disabled={isEdit}
             >
-              <span />
-            </button>
-          </div>
+              {PRODUCT_TYPES.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Product Name</span>
+            <input
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="e.g. 90 Days FD"
+            />
+          </label>
+          <label>
+            <span>GL Account Type</span>
+            <select value={glRole} onChange={(e) => setGlRole(e.target.value as ProductGlRole)}>
+              {(Object.keys(ROLE_LABEL) as ProductGlRole[]).map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_LABEL[role]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>GL Code</span>
+            <select value={glCode} onChange={(e) => setGlCode(e.target.value)}>
+              <option value="">Select GL</option>
+              {glOptions.map((g) => (
+                <option key={g.code} value={g.code}>
+                  {g.code} — {g.description || g.code}
+                </option>
+              ))}
+              {glCode && !glOptions.some((g) => g.code === glCode) ? (
+                <option value={glCode}>{glCode}</option>
+              ) : null}
+            </select>
+          </label>
+          <label>
+            <span>Currency</span>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              {CURRENCIES.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          {isEdit ? (
+            <label>
+              <span>Status</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </label>
+          ) : null}
         </div>
 
-        <footer className="glm-modal-foot">
-          <button type="button" className="glm-btn glm-btn--ghost" onClick={onClose}>
+        <footer>
+          <button type="button" className="gem-ghost" onClick={onClose} disabled={busy}>
             Cancel
           </button>
-          <div className="glm-modal-foot-right">
-            <button type="button" className="glm-btn glm-btn--outline" onClick={() => { window.alert("Mapping saved (MVP)"); onClose(); }}>
-              Save
-            </button>
-            <button type="button" className="glm-btn glm-btn--primary" onClick={onClose}>
-              Add New
-            </button>
-          </div>
+          <button type="button" className="gem-primary" disabled={busy} onClick={() => void submit()}>
+            {busy ? (isEdit ? "Updating…" : "Creating…") : isEdit ? "Update mapping" : "Create mapping"}
+          </button>
         </footer>
       </div>
     </div>
@@ -456,7 +559,7 @@ function PrintIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <rect x="7" y="14" width="10" height="6" rx="1" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M7 13h10v7H7v-7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     </svg>
   );
 }

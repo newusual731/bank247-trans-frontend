@@ -1,21 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  closeAccount,
+  enquireAccount,
+  formatAccountStatus,
+  getAccount,
+  listCasaProducts,
+  openAccount,
+  reactivateAccount,
+  searchAccounts,
+  type AccountEnquiryResponse,
+  type AccountResponse,
+  type CasaProduct,
+} from "../api/accounts";
+import { listBranches, type Branch } from "../api/branches";
+import { getCustomerByCif, searchCustomers } from "../api/customers";
+import { getAccountBalance, getAccountEntries } from "../api/ledger";
+import { ApiError } from "../lib/apiClient";
 import { AppAlert } from "../components/feedback/AppAlert";
 import { SuccessModal } from "../components/feedback/SuccessModal";
-import {
-  ACCOUNT_STATUSES,
-  BRANCH_CODES,
-  CONTRACT_PARTY_TYPES,
-  COST_CENTERS,
-  CURRENCIES,
-  CUSTOMER_ACCOUNT_TYPES,
-  GL_ACCOUNT_CLASSES,
-  GL_CODE_OPTIONS,
-  GL_LEDGER_ROLES,
-  INSTRUMENT_PRODUCT_CODES,
-} from "../data/accountTypeOptions";
+import { Skeleton, SkeletonTableBody } from "../components/skeleton";
+import { CURRENCIES } from "../data/accountTypeOptions";
 import "./AccountsPage.css";
-
-type Tab = "customer" | "internal";
 
 type AccountRow = {
   id: string;
@@ -26,277 +31,94 @@ type AccountRow = {
   linkedGl: string;
   balance: string;
   status: string;
-  party: Tab;
-  product: string;
-  openingBalance: string;
-  ledgerRole: string;
   currency: string;
+  branchCode: string;
+  customerId: string;
 };
 
-type AccountDraft = {
-  accountName: string;
-  accountType: (typeof CONTRACT_PARTY_TYPES)[number];
-  openingBalance: string;
-  product: string;
+type OpenDraft = {
+  customerId: string;
+  customerLabel: string;
+  cif: string;
   productCode: string;
-  linkedGl: string;
-  ledgerRole: string;
-  subtype: string;
   currency: string;
+  branchCode: string;
+  accountNumber: string;
 };
 
-type ModalMode = "create" | "edit";
+const PAGE_SIZE = 20;
+const STATUS_OPTIONS = ["All", "ACTIVE", "PENDING_APPROVAL", "PENDING_ACTIVATION", "DORMANT", "CLOSED", "FAILED_ACTIVATION"] as const;
 
-const CUSTOMER_SEED: AccountRow[] = [
-  {
-    id: "001",
-    name: "John Doe",
-    subtype: "Loan Account",
-    accountNumber: "1234567890",
-    productCode: "L0001",
-    linkedGl: "40004",
-    balance: "₦500,000.00",
-    status: "Dormant",
-    party: "customer",
-    product: "Loan Account",
-    openingBalance: "₦500,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "002",
-    name: "Adebayo Okon",
-    subtype: "Savings Account",
-    accountNumber: "2000145211",
-    productCode: "SA0001",
-    linkedGl: "1001001",
-    balance: "₦1,250,000.00",
-    status: "Active",
-    party: "customer",
-    product: "Savings Account",
-    openingBalance: "₦1,250,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "003",
-    name: "Chioma Nwosu",
-    subtype: "Current Account",
-    accountNumber: "1000299102",
-    productCode: "CA0002",
-    linkedGl: "1001002",
-    balance: "₦480,200.00",
-    status: "Active",
-    party: "customer",
-    product: "Current Account",
-    openingBalance: "₦480,200",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "004",
-    name: "Sam Kola",
-    subtype: "Fixed Deposit",
-    accountNumber: "3000111222",
-    productCode: "FD-180",
-    linkedGl: "10005",
-    balance: "₦5,000,000.00",
-    status: "Active",
-    party: "customer",
-    product: "Fixed Deposit",
-    openingBalance: "₦5,000,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "005",
-    name: "John Doe",
-    subtype: "Loan Account",
-    accountNumber: "1234567891",
-    productCode: "L0001",
-    linkedGl: "40004",
-    balance: "₦500,000.00",
-    status: "Dormant",
-    party: "customer",
-    product: "Loan Account",
-    openingBalance: "₦500,000",
-    ledgerRole: "Interest GL",
-    currency: "NGN",
-  },
-  {
-    id: "006",
-    name: "John Doe",
-    subtype: "Loan Account",
-    accountNumber: "1234567892",
-    productCode: "L0001",
-    linkedGl: "40004",
-    balance: "₦500,000.00",
-    status: "Dormant",
-    party: "customer",
-    product: "Loan Account",
-    openingBalance: "₦500,000",
-    ledgerRole: "Charges GL",
-    currency: "USD",
-  },
-  {
-    id: "007",
-    name: "John Doe",
-    subtype: "Loan Account",
-    accountNumber: "1234567893",
-    productCode: "L0001",
-    linkedGl: "40004",
-    balance: "₦500,000.00",
-    status: "Dormant",
-    party: "customer",
-    product: "Loan Account",
-    openingBalance: "₦500,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-];
+function emptyOpenDraft(): OpenDraft {
+  return {
+    customerId: "",
+    customerLabel: "",
+    cif: "",
+    productCode: "",
+    currency: "",
+    branchCode: "",
+    accountNumber: "",
+  };
+}
 
-const INTERNAL_SEED: AccountRow[] = [
-  {
-    id: "101",
-    name: "Cash in Vault — Ikeja",
-    subtype: "Operating Account",
-    accountNumber: "1110100001",
-    productCode: "VAULT-NGN",
-    linkedGl: "10001",
-    balance: "₦12,400,000.00",
-    status: "Active",
-    party: "internal",
-    product: "Vault Cash",
-    openingBalance: "₦12,400,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "102",
-    name: "Cash in Till — 637373",
-    subtype: "Operating Account",
-    accountNumber: "1110206373",
-    productCode: "TILL-NGN",
-    linkedGl: "10002",
-    balance: "₦2,150,000.00",
-    status: "Active",
-    party: "internal",
-    product: "Till Cash",
-    openingBalance: "₦2,150,000",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "103",
-    name: "Inter-branch Clearing",
-    subtype: "Suspense Account",
-    accountNumber: "2110300001",
-    productCode: "CLR-NGN",
-    linkedGl: "10005",
-    balance: "₦0.00",
-    status: "Active",
-    party: "internal",
-    product: "Clearing",
-    openingBalance: "₦0",
-    ledgerRole: "Principal GL",
-    currency: "NGN",
-  },
-  {
-    id: "104",
-    name: "Nostro USD",
-    subtype: "Control Account",
-    accountNumber: "1110400001",
-    productCode: "NOSTRO-USD",
-    linkedGl: "10003",
-    balance: "$840,000.00",
-    status: "Active",
-    party: "internal",
-    product: "Nostro",
-    openingBalance: "$840,000",
-    ledgerRole: "Principal GL",
-    currency: "USD",
-  },
-  {
-    id: "105",
-    name: "Interest Accrual Pool",
-    subtype: "Contra Account",
-    accountNumber: "3110500001",
-    productCode: "INT-POOL",
-    linkedGl: "10007",
-    balance: "₦96,500.00",
-    status: "Active",
-    party: "internal",
-    product: "Interest Pool",
-    openingBalance: "₦96,500",
-    ledgerRole: "Interest GL",
-    currency: "NGN",
-  },
-];
+function SelectPlaceholder() {
+  return (
+    <option value="" disabled>
+      Select
+    </option>
+  );
+}
 
-const INTERNAL_PRODUCTS = ["Vault Cash", "Till Cash", "Clearing", "Nostro", "Interest Pool", "Suspense"] as const;
-const INTERNAL_CODES = ["VAULT-NGN", "TILL-NGN", "CLR-NGN", "NOSTRO-USD", "INT-POOL", "SUSP-NGN"] as const;
-const CUSTOMER_SUBTYPES = ["Regular savings", "Premium savings", "Salary account", "Loan Account"] as const;
-const INTERNAL_SUBTYPES = [
-  "Operating Account",
-  "Control Account",
-  "Suspense Account",
-  "Contra Account",
-] as const;
+function mapAccountToRow(a: AccountResponse, extras?: Partial<AccountRow>): AccountRow {
+  return {
+    id: a.id,
+    name: extras?.name ?? a.customerType ?? "—",
+    subtype: a.customerType || "—",
+    accountNumber: a.accountNumber,
+    productCode: a.productCode,
+    linkedGl: extras?.linkedGl ?? "—",
+    balance: extras?.balance ?? "—",
+    status: formatAccountStatus(String(a.status)),
+    currency: a.currency,
+    branchCode: a.branchCode,
+    customerId: a.customerId,
+  };
+}
 
-function emptyDraft(party: Tab): AccountDraft {
-  if (party === "internal") {
-    return {
-      accountName: "Cash in Vault — Ikeja",
-      accountType: "Internal",
-      openingBalance: "₦0",
-      product: INTERNAL_PRODUCTS[0],
-      productCode: INTERNAL_CODES[0],
-      linkedGl: "10001",
-      ledgerRole: GL_LEDGER_ROLES[0],
-      subtype: INTERNAL_SUBTYPES[0],
-      currency: "NGN",
-    };
+function unwrapEnquiry(res: AccountEnquiryResponse | AccountResponse | Record<string, unknown>): AccountResponse {
+  if (res && typeof res === "object" && "account" in res && (res as AccountEnquiryResponse).account) {
+    return (res as AccountEnquiryResponse).account;
   }
-  return {
-    accountName: "John Doe- Savings",
-    accountType: "Customer",
-    openingBalance: "₦5,000,000",
-    product: "Fixed Deposit",
-    productCode: INSTRUMENT_PRODUCT_CODES[0],
-    linkedGl: "1001001",
-    ledgerRole: GL_LEDGER_ROLES[0],
-    subtype: CUSTOMER_SUBTYPES[0],
-    currency: "USD",
-  };
+  return res as AccountResponse;
 }
 
-function rowToDraft(row: AccountRow): AccountDraft {
-  return {
-    accountName: `${row.name}${row.party === "customer" ? `- ${row.subtype}` : ""}`,
-    accountType: row.party === "customer" ? "Customer" : "Internal",
-    openingBalance: row.openingBalance,
-    product: row.product,
-    productCode: row.productCode,
-    linkedGl: row.linkedGl,
-    ledgerRole: row.ledgerRole,
-    subtype: row.subtype,
-    currency: row.currency,
-  };
+function pageContent<T>(page: { content?: T[] } | T[] | null | undefined): T[] {
+  if (!page) return [];
+  if (Array.isArray(page)) return page;
+  return page.content ?? [];
 }
 
-/** Accounts — CUSTOMER.png / INTERNAL.png / Add New.png + alerts */
+/** Accounts — wired to account-service search / open / close / reactivate. */
 export function AccountsPage() {
-  const [tab, setTab] = useState<Tab>("customer");
   const [query, setQuery] = useState("");
-  const [customerRows, setCustomerRows] = useState(CUSTOMER_SEED);
-  const [internalRows, setInternalRows] = useState(INTERNAL_SEED);
-  const [glClass, setGlClass] = useState<string>(GL_ACCOUNT_CLASSES[0]);
-  const [branchCode, setBranchCode] = useState<string>(BRANCH_CODES[0]);
-  const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
-  const [costCenter, setCostCenter] = useState<string>(COST_CENTERS[0]);
-  const [status, setStatus] = useState<string>("All");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [listLoading, setListLoading] = useState(true);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
 
-  const [modal, setModal] = useState<{ mode: ModalMode; row?: AccountRow } | null>(null);
+  const [rows, setRows] = useState<AccountRow[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const [branchFilter, setBranchFilter] = useState("");
+  const [currencyFilter, setCurrencyFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [branchOptions, setBranchOptions] = useState<string[]>([]);
+  const [products, setProducts] = useState<CasaProduct[]>([]);
+
+  const [modalOpen, setModalOpen] = useState(false);
   const [ledgerRow, setLedgerRow] = useState<AccountRow | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState("Account created successfully");
@@ -308,172 +130,212 @@ export function AccountsPage() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const source = tab === "customer" ? customerRows : internalRows;
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
-  const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const statusQ = status.toLowerCase();
-    return source.filter((r) => {
-      if (statusQ && statusQ !== "all" && r.status.toLowerCase() !== statusQ) return false;
-      if (!q) return true;
-      return (
-        r.name.toLowerCase().includes(q) ||
-        r.accountNumber.includes(q) ||
-        r.productCode.toLowerCase().includes(q) ||
-        r.id.includes(q) ||
-        r.subtype.toLowerCase().includes(q)
-      );
-    });
-  }, [source, query, status]);
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedQuery, branchFilter, currencyFilter, statusFilter]);
 
-  const openCreate = () => setModal({ mode: "create" });
-  const openEdit = (row: AccountRow) => setModal({ mode: "edit", row });
-
-  const upsertRow = (draft: AccountDraft, mode: ModalMode, existing?: AccountRow) => {
-    const party: Tab = draft.accountType === "Internal" ? "internal" : "customer";
-    const name =
-      party === "customer"
-        ? draft.accountName.split("-")[0]?.trim() || draft.accountName
-        : draft.accountName;
-
-    const next: AccountRow = {
-      id:
-        existing?.id ??
-        String((party === "customer" ? customerRows.length : internalRows.length) + 1).padStart(3, "0"),
-      name,
-      subtype: draft.subtype,
-      accountNumber:
-        existing?.accountNumber ??
-        (party === "customer"
-          ? `2${String(Math.floor(100000000 + Math.random() * 899999999))}`
-          : `1${String(Math.floor(100000000 + Math.random() * 899999999))}`),
-      productCode: draft.productCode.includes("-")
-        ? draft.productCode.split("-")[0] ?? draft.productCode
-        : draft.productCode,
-      linkedGl: draft.linkedGl.includes("-")
-        ? draft.linkedGl.split("-")[0]?.trim() ?? draft.linkedGl
-        : draft.linkedGl,
-      balance:
-        draft.openingBalance.startsWith("₦") || draft.openingBalance.startsWith("$")
-          ? draft.openingBalance.includes(".")
-            ? draft.openingBalance
-            : `${draft.openingBalance}.00`
-          : `₦${draft.openingBalance}`,
-      status: "Active",
-      party,
-      product: draft.product,
-      openingBalance: draft.openingBalance,
-      ledgerRole: draft.ledgerRole,
-      currency: draft.currency,
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [branchPage, productPage] = await Promise.all([
+          listBranches({ status: "ACTIVE", size: 100 }).catch(() => ({ content: [] })),
+          listCasaProducts({ status: "ACTIVE", size: 100 }).catch(() => ({ content: [] })),
+        ]);
+        if (cancelled) return;
+        const branches = pageContent<Branch>(branchPage as { content?: Branch[] });
+        setBranchOptions(branches.map((b) => b.code).filter(Boolean));
+        setProducts(pageContent<CasaProduct>(productPage as { content?: CasaProduct[] }));
+      } catch {
+        /* filters fall back to free text / empty */
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    if (party === "customer") {
-      setCustomerRows((prev) =>
-        mode === "edit" && existing ? prev.map((r) => (r.id === existing.id ? next : r)) : [next, ...prev],
-      );
-      if (tab !== "customer") setTab("customer");
-    } else {
-      setInternalRows((prev) =>
-        mode === "edit" && existing ? prev.map((r) => (r.id === existing.id ? next : r)) : [next, ...prev],
-      );
-      if (tab !== "internal") setTab("internal");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setListLoading(true);
+      setListError(null);
+      try {
+        const result = await searchAccounts({
+          q: debouncedQuery || undefined,
+          branchCode: branchFilter || undefined,
+          currency: currencyFilter || undefined,
+          status: statusFilter !== "All" ? statusFilter : undefined,
+          page,
+          size: PAGE_SIZE,
+        });
+        if (cancelled) return;
+        setRows(result.content.map((a) => mapAccountToRow(a)));
+        setTotalPages(Math.max(1, result.totalPages || 1));
+        setTotalElements(result.totalElements ?? 0);
+      } catch (e) {
+        if (cancelled) return;
+        setRows([]);
+        setTotalElements(0);
+        setTotalPages(1);
+        setListError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Unable to load accounts");
+      } finally {
+        if (!cancelled) setListLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, branchFilter, currencyFilter, statusFilter, page]);
+
+  async function lookupAccount() {
+    const acct = query.trim();
+    if (!acct) return;
+    setLookupError(null);
+    setLookupLoading(true);
+    try {
+      const res = await enquireAccount(acct);
+      const account = unwrapEnquiry(res);
+      const row = mapAccountToRow(account);
+      setRows((prev) => [row, ...prev.filter((x) => x.accountNumber !== row.accountNumber)]);
+      setToast({ title: "Account found", message: row.accountNumber });
+    } catch (e) {
+      setLookupError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Lookup failed");
+    } finally {
+      setLookupLoading(false);
     }
-  };
+  }
+
+  async function refreshList() {
+    setPage(0);
+    setDebouncedQuery((q) => q);
+    // force reload by bumping list via re-fetch
+    setListLoading(true);
+    try {
+      const result = await searchAccounts({
+        q: debouncedQuery || undefined,
+        branchCode: branchFilter || undefined,
+        currency: currencyFilter || undefined,
+        status: statusFilter !== "All" ? statusFilter : undefined,
+        page: 0,
+        size: PAGE_SIZE,
+      });
+      setRows(result.content.map((a) => mapAccountToRow(a)));
+      setTotalPages(Math.max(1, result.totalPages || 1));
+      setTotalElements(result.totalElements ?? 0);
+      setListError(null);
+    } catch (e) {
+      setListError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Unable to load accounts");
+    } finally {
+      setListLoading(false);
+    }
+  }
+
+  const fromIdx = totalElements === 0 ? 0 : page * PAGE_SIZE + 1;
+  const toIdx = Math.min((page + 1) * PAGE_SIZE, totalElements);
+  const branchSelectOptions = branchOptions.length ? branchOptions : ["HQ", "001"];
 
   return (
-    <div className="accounts">
+    <div className="accounts" aria-busy={listLoading || lookupLoading}>
       {toast ? (
         <AppAlert tone="success" title={toast.title} message={toast.message} onClose={() => setToast(null)} />
       ) : null}
 
       {successOpen ? (
         <SuccessModal
-          title="Successfull"
+          title="Successful"
           message={successMsg}
           onOkay={() => {
             setSuccessOpen(false);
-            setToast({
-              title: "Success",
-              message:
-                tab === "internal"
-                  ? "Internal account created successfully"
-                  : "New customer account created successfully",
-            });
+            setToast({ title: "Success", message: successMsg });
           }}
         />
       ) : null}
 
       <div className="accounts-head">
         <h1>Accounts</h1>
-        <button type="button" className="accounts-add" onClick={openCreate}>
+        <button type="button" className="accounts-add" onClick={() => setModalOpen(true)}>
           + Add New Account
         </button>
       </div>
 
       <div className="accounts-filters">
-        <FilterSelect label="GL Account Type" value={glClass} options={GL_ACCOUNT_CLASSES} onChange={setGlClass} />
-        <FilterSelect label="Branch Code" value={branchCode} options={BRANCH_CODES} onChange={setBranchCode} />
-        <FilterSelect label="Currency" value={currency} options={CURRENCIES} onChange={setCurrency} />
-        <FilterSelect label="Cost center" value={costCenter} options={COST_CENTERS} onChange={setCostCenter} />
         <FilterSelect
-          label="Status"
-          value={status}
-          options={["All", ...ACCOUNT_STATUSES]}
-          onChange={setStatus}
+          label="Branch Code"
+          value={branchFilter}
+          options={["", ...branchSelectOptions]}
+          optionLabels={{ "": "All" }}
+          onChange={(v) => setBranchFilter(v)}
         />
-      </div>
-
-      <div className="accounts-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "customer"}
-          className={tab === "customer" ? "is-active" : undefined}
-          onClick={() => setTab("customer")}
-        >
-          Customer Accounts
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "internal"}
-          className={tab === "internal" ? "is-active" : undefined}
-          onClick={() => setTab("internal")}
-        >
-          Internal Accounts
-        </button>
+        <FilterSelect
+          label="Currency"
+          value={currencyFilter}
+          options={["", ...CURRENCIES]}
+          optionLabels={{ "": "All" }}
+          onChange={setCurrencyFilter}
+        />
+        <FilterSelect label="Status" value={statusFilter} options={[...STATUS_OPTIONS]} onChange={setStatusFilter} />
       </div>
 
       <label className="accounts-table-search">
         <SearchIcon />
-        <input type="search" placeholder="Search..." value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input
+          type="search"
+          placeholder="Search account number or product… (Enter for exact enquiry)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void lookupAccount();
+            }
+          }}
+          disabled={lookupLoading}
+        />
       </label>
+      {lookupError ? (
+        <p className="accounts-empty" role="alert" style={{ margin: "0 0 0.75rem" }}>
+          {lookupError}
+        </p>
+      ) : null}
+      {listError ? (
+        <p className="accounts-empty" role="alert" style={{ margin: "0 0 0.75rem" }}>
+          {listError}
+        </p>
+      ) : null}
 
-      <div className="accounts-table-wrap">
+      <div className={`accounts-table-wrap${listLoading || lookupLoading ? " is-loading" : ""}`}>
         <table className="accounts-table">
           <thead>
             <tr>
               <th>Account ID</th>
-              <th>Account Name</th>
+              <th>Customer / Type</th>
               <th>Account Number</th>
               <th>Product Code</th>
-              <th>Linked GL Code</th>
-              <th>Balance(₦)</th>
+              <th>Branch</th>
+              <th>Currency</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {listLoading || lookupLoading ? (
+              <SkeletonTableBody rows={6} columns={["xs", "name", "md", "sm", "sm", "xs", "pill", "action"]} />
+            ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="accounts-empty">
-                  No {tab} accounts match these filters.
+                  No accounts match these filters.
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={`${row.party}-${row.id}`}>
-                  <td>{row.id}</td>
+                <tr key={row.id}>
+                  <td title={row.id}>{row.id.slice(0, 8)}…</td>
                   <td>
                     <div className="accounts-name">
                       <strong>{row.name}</strong>
@@ -482,8 +344,8 @@ export function AccountsPage() {
                   </td>
                   <td>{row.accountNumber}</td>
                   <td>{row.productCode}</td>
-                  <td>{row.linkedGl}</td>
-                  <td>{row.balance}</td>
+                  <td>{row.branchCode}</td>
+                  <td>{row.currency}</td>
                   <td>{row.status}</td>
                   <td>
                     <div className="accounts-actions">
@@ -491,9 +353,40 @@ export function AccountsPage() {
                         View Ledger
                       </button>
                       <span aria-hidden>·</span>
-                      <button type="button" className="accounts-edit" onClick={() => openEdit(row)}>
-                        Edit
-                        <ChevronDown />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void (async () => {
+                            try {
+                              await closeAccount(row.accountNumber, "Closed from accounts UI");
+                              setToast({ title: "Close submitted", message: row.accountNumber });
+                              await refreshList();
+                            } catch (e) {
+                              window.alert(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Close failed");
+                            }
+                          })();
+                        }}
+                      >
+                        Close
+                      </button>
+                      <span aria-hidden>·</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void (async () => {
+                            try {
+                              await reactivateAccount(row.accountNumber);
+                              setToast({ title: "Account reactivated", message: row.accountNumber });
+                              await refreshList();
+                            } catch (e) {
+                              window.alert(
+                                e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reactivate failed",
+                              );
+                            }
+                          })();
+                        }}
+                      >
+                        Reactivate
                       </button>
                     </div>
                   </td>
@@ -504,50 +397,65 @@ export function AccountsPage() {
         </table>
       </div>
 
-      {modal ? (
+      <div className="accounts-pager" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.75rem", gap: "1rem" }}>
+        <span>
+          {listLoading ? "…" : totalElements === 0 ? "0 results" : `${fromIdx}–${toIdx} of ${totalElements}`}
+        </span>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button type="button" disabled={page <= 0 || listLoading} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+            Previous
+          </button>
+          <span>
+            Page {totalElements === 0 ? 0 : page + 1} of {totalElements === 0 ? 0 : totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page + 1 >= totalPages || listLoading || totalElements === 0}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {modalOpen ? (
         <AddAccountModal
-          mode={modal.mode}
-          tabDefault={tab}
-          initial={modal.row ? rowToDraft(modal.row) : emptyDraft(tab)}
-          existing={modal.row}
-          onClose={() => setModal(null)}
-          onSaveDraft={(draft) => {
-            upsertRow(draft, modal.mode, modal.row);
-            setModal(null);
-            setToast({ title: "Success", message: "Account draft saved successfully" });
-          }}
-          onSubmit={(draft) => {
-            upsertRow(draft, modal.mode, modal.row);
-            setModal(null);
-            if (modal.mode === "create") {
-              setSuccessMsg(
-                draft.accountType === "Internal"
-                  ? "Internal account setup successfully"
-                  : "Account parameter setup successfully",
-              );
+          products={products}
+          branches={branchSelectOptions}
+          onClose={() => setModalOpen(false)}
+          onSubmit={async (draft) => {
+            try {
+              if (!draft.customerId || !draft.productCode || !draft.currency || !draft.branchCode) {
+                window.alert("Customer, product, currency, and branch are required.");
+                return;
+              }
+              const created = await openAccount({
+                accountNumber: draft.accountNumber && /^[0-9]{10}$/.test(draft.accountNumber) ? draft.accountNumber : undefined,
+                customerId: draft.customerId,
+                productCode: draft.productCode.toUpperCase().replace(/[^A-Z0-9_-]/g, "_").slice(0, 40),
+                currency: draft.currency.slice(0, 3).toUpperCase(),
+                branchCode: draft.branchCode.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20),
+              });
+              const acct = created.accountNumber;
+              const status = formatAccountStatus(String(created.status));
+              const msg = acct
+                ? created.status === "PENDING_APPROVAL"
+                  ? `Account ${acct} submitted for approval`
+                  : `Account ${acct} opened (${status})`
+                : "Account open submitted";
+              setModalOpen(false);
+              setSuccessMsg(msg);
               setSuccessOpen(true);
-            } else {
-              setToast({ title: "Success", message: "Account updated successfully" });
+              await refreshList();
+            } catch (e) {
+              window.alert(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Open account failed");
             }
           }}
         />
       ) : null}
 
-      {ledgerRow ? (
-        <LedgerDrawer
-          row={ledgerRow}
-          onClose={() => setLedgerRow(null)}
-          onEdited={() => {
-            const r = ledgerRow;
-            setLedgerRow(null);
-            openEdit(r);
-          }}
-        />
-      ) : null}
+      {ledgerRow ? <LedgerDrawer row={ledgerRow} onClose={() => setLedgerRow(null)} /> : null}
 
-      <span className="accounts-sr-only">
-        {glClass} {branchCode} {currency} {costCenter}
-      </span>
     </div>
   );
 }
@@ -556,11 +464,13 @@ function FilterSelect({
   label,
   value,
   options,
+  optionLabels,
   onChange,
 }: {
   label: string;
   value: string;
   options: readonly string[];
+  optionLabels?: Record<string, string>;
   onChange: (v: string) => void;
 }) {
   return (
@@ -569,8 +479,8 @@ function FilterSelect({
       <div className="accounts-select">
         <select value={value} onChange={(e) => onChange(e.target.value)}>
           {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
+            <option key={o || "all"} value={o}>
+              {optionLabels?.[o] ?? (o || "All")}
             </option>
           ))}
         </select>
@@ -581,37 +491,83 @@ function FilterSelect({
 }
 
 function AddAccountModal({
-  mode,
-  tabDefault,
-  initial,
-  existing,
+  products,
+  branches,
   onClose,
-  onSaveDraft,
   onSubmit,
 }: {
-  mode: ModalMode;
-  tabDefault: Tab;
-  initial: AccountDraft;
-  existing?: AccountRow;
+  products: CasaProduct[];
+  branches: string[];
   onClose: () => void;
-  onSaveDraft: (draft: AccountDraft) => void;
-  onSubmit: (draft: AccountDraft) => void;
+  onSubmit: (draft: OpenDraft) => void | Promise<void>;
 }) {
-  const [draft, setDraft] = useState<AccountDraft>(initial);
-  const isInternal = draft.accountType === "Internal";
-  const products = isInternal ? INTERNAL_PRODUCTS : CUSTOMER_ACCOUNT_TYPES;
-  const codes = isInternal ? INTERNAL_CODES : INSTRUMENT_PRODUCT_CODES;
-  const subtypes = isInternal ? INTERNAL_SUBTYPES : CUSTOMER_SUBTYPES;
+  const [draft, setDraft] = useState<OpenDraft>(emptyOpenDraft());
+  const [busy, setBusy] = useState(false);
+  const [cifError, setCifError] = useState<string | null>(null);
+  const [cifLoading, setCifLoading] = useState(false);
 
-  const set = <K extends keyof AccountDraft>(key: K, value: AccountDraft[K]) => {
+  const selectedProduct = products.find((p) => p.code === draft.productCode);
+  const linkedGl =
+    selectedProduct?.interestExpenseLedgerAccount || selectedProduct?.chargeIncomeLedgerAccount || "—";
+
+  const set = <K extends keyof OpenDraft>(key: K, value: OpenDraft[K]) => {
     setDraft((d) => {
-      if (key === "accountType") {
-        const party = value === "Internal" ? "internal" : "customer";
-        return { ...emptyDraft(party), accountType: value as AccountDraft["accountType"] };
+      const next = { ...d, [key]: value };
+      if (key === "productCode") {
+        const product = products.find((p) => p.code === value);
+        if (product?.currency && !d.currency) next.currency = product.currency;
+        if (product?.currency) next.currency = product.currency;
       }
-      return { ...d, [key]: value };
+      return next;
     });
   };
+
+  async function resolveCustomer() {
+    const cif = draft.cif.trim();
+    if (!cif) {
+      setCifError("Enter a CIF or customer UUID");
+      return;
+    }
+    setCifLoading(true);
+    setCifError(null);
+    try {
+      if (/^[0-9a-fA-F-]{36}$/.test(cif)) {
+        set("customerId", cif);
+        set("customerLabel", cif);
+        return;
+      }
+      let customer: Record<string, unknown> | null = null;
+      try {
+        customer = (await getCustomerByCif(cif)) as Record<string, unknown>;
+      } catch {
+        const page = (await searchCustomers({ cifNumber: cif, size: 1 })) as {
+          content?: Record<string, unknown>[];
+        };
+        customer = page.content?.[0] ?? null;
+      }
+      if (!customer) {
+        setCifError("Customer not found");
+        set("customerId", "");
+        set("customerLabel", "");
+        return;
+      }
+      const id = String(customer.id ?? customer.customerId ?? "");
+      if (!id) {
+        setCifError("Customer record missing id");
+        return;
+      }
+      const name =
+        String(customer.fullName ?? customer.name ?? customer.legalName ?? customer.cifNumber ?? id);
+      set("customerId", id);
+      set("customerLabel", name);
+    } catch (e) {
+      setCifError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Customer lookup failed");
+      set("customerId", "");
+      set("customerLabel", "");
+    } finally {
+      setCifLoading(false);
+    }
+  }
 
   return (
     <div className="acct-modal-backdrop" role="presentation" onClick={onClose}>
@@ -623,7 +579,7 @@ function AddAccountModal({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="acct-modal-head">
-          <h2 id="add-account-title">{mode === "edit" ? "Edit Account" : "Add New Account"}</h2>
+          <h2 id="add-account-title">Add New Account</h2>
           <button type="button" className="acct-modal-close" aria-label="Close" onClick={onClose}>
             ×
           </button>
@@ -631,31 +587,30 @@ function AddAccountModal({
 
         <div className="acct-modal-body">
           <section className="acct-section">
-            <h3>Account Info</h3>
+            <h3>Customer</h3>
             <label className="acct-field">
-              <span>Account Name</span>
-              <input value={draft.accountName} onChange={(e) => set("accountName", e.target.value)} />
-            </label>
-            <label className="acct-field">
-              <span>Account Type</span>
-              <div className="acct-select">
-                <select
-                  value={draft.accountType}
-                  onChange={(e) => set("accountType", e.target.value as AccountDraft["accountType"])}
-                >
-                  {CONTRACT_PARTY_TYPES.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown />
+              <span>CIF or Customer ID</span>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <input
+                  value={draft.cif}
+                  placeholder="Enter CIF or UUID"
+                  onChange={(e) => set("cif", e.target.value)}
+                />
+                <button type="button" className="acct-btn-ghost" disabled={cifLoading} onClick={() => void resolveCustomer()}>
+                  {cifLoading ? "…" : "Lookup"}
+                </button>
               </div>
             </label>
-            <label className="acct-field">
-              <span>Opening Balance</span>
-              <input value={draft.openingBalance} onChange={(e) => set("openingBalance", e.target.value)} />
-            </label>
+            {cifError ? (
+              <p role="alert" className="accounts-empty">
+                {cifError}
+              </p>
+            ) : null}
+            {draft.customerId ? (
+              <p className="acct-meta">
+                Linked: {draft.customerLabel} ({draft.customerId.slice(0, 8)}…)
+              </p>
+            ) : null}
           </section>
 
           <section className="acct-section">
@@ -663,23 +618,11 @@ function AddAccountModal({
             <label className="acct-field">
               <span>Product</span>
               <div className="acct-select">
-                <select value={draft.product} onChange={(e) => set("product", e.target.value)}>
-                  {products.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown />
-              </div>
-            </label>
-            <label className="acct-field">
-              <span>Product Code</span>
-              <div className="acct-select">
                 <select value={draft.productCode} onChange={(e) => set("productCode", e.target.value)}>
-                  {codes.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
+                  <SelectPlaceholder />
+                  {products.map((p) => (
+                    <option key={p.code} value={p.code}>
+                      {p.code} — {p.name}
                     </option>
                   ))}
                 </select>
@@ -687,70 +630,46 @@ function AddAccountModal({
               </div>
             </label>
             <label className="acct-field">
-              <span>Linked GL Code</span>
-              {isInternal ? (
-                <div className="acct-select">
-                  <select value={draft.linkedGl} onChange={(e) => set("linkedGl", e.target.value)}>
-                    {GL_CODE_OPTIONS.map((o) => (
-                      <option key={o} value={o.split("-")[0]?.trim() ?? o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown />
-                </div>
-              ) : (
-                <input value={draft.linkedGl} onChange={(e) => set("linkedGl", e.target.value)} />
-              )}
-            </label>
-          </section>
-
-          <section className="acct-section">
-            <h3>Product Ledger Mapping</h3>
-            <label className="acct-field">
-              <span>Product Type</span>
-              <div className="acct-select">
-                <select value={draft.ledgerRole} onChange={(e) => set("ledgerRole", e.target.value)}>
-                  {GL_LEDGER_ROLES.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown />
-              </div>
-            </label>
-            <label className="acct-field">
-              <span>Product Subtype</span>
-              <div className="acct-select">
-                <select value={draft.subtype} onChange={(e) => set("subtype", e.target.value)}>
-                  {subtypes.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown />
-              </div>
-            </label>
-            <label className="acct-field">
-              <span>{isInternal ? "Currency" : "Product Subtype"}</span>
+              <span>Currency</span>
               <div className="acct-select">
                 <select value={draft.currency} onChange={(e) => set("currency", e.target.value)}>
-                  <option>USD</option>
-                  <option>NGN</option>
-                  <option>EUR</option>
+                  <SelectPlaceholder />
+                  {(selectedProduct?.currency ? [selectedProduct.currency] : [...CURRENCIES]).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown />
               </div>
             </label>
+            <label className="acct-field">
+              <span>Branch</span>
+              <div className="acct-select">
+                <select value={draft.branchCode} onChange={(e) => set("branchCode", e.target.value)}>
+                  <SelectPlaceholder />
+                  {branches.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+            <label className="acct-field">
+              <span>Linked GL (from product)</span>
+              <input value={linkedGl} readOnly />
+            </label>
+            <label className="acct-field">
+              <span>Account Number (optional)</span>
+              <input
+                value={draft.accountNumber}
+                placeholder="10-digit NUBAN — leave blank to auto-generate"
+                onChange={(e) => set("accountNumber", e.target.value)}
+              />
+            </label>
           </section>
-
-          {existing ? (
-            <p className="acct-meta">
-              Editing {existing.accountNumber} · started from {tabDefault} tab
-            </p>
-          ) : null}
         </div>
 
         <footer className="acct-modal-foot">
@@ -758,12 +677,23 @@ function AddAccountModal({
             <button type="button" className="acct-btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className="acct-btn-ghost" onClick={() => onSaveDraft(draft)}>
-              Save
-            </button>
           </div>
-          <button type="button" className="acct-btn-primary" onClick={() => onSubmit(draft)}>
-            {mode === "edit" ? "Update Account" : "Add New Account"}
+          <button
+            type="button"
+            className="acct-btn-primary"
+            disabled={busy}
+            onClick={() => {
+              void (async () => {
+                setBusy(true);
+                try {
+                  await onSubmit(draft);
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
+          >
+            {busy ? "Submitting…" : "Add New Account"}
           </button>
         </footer>
       </div>
@@ -771,20 +701,58 @@ function AddAccountModal({
   );
 }
 
-function LedgerDrawer({
-  row,
-  onClose,
-  onEdited,
-}: {
-  row: AccountRow;
-  onClose: () => void;
-  onEdited: () => void;
-}) {
-  const lines = [
-    { date: "15-Jun-2025", ref: "TXN-88421", narr: "Opening balance", dr: row.balance, cr: "—" },
-    { date: "16-Jun-2025", ref: "TXN-88455", narr: "Interest accrual", dr: "—", cr: "₦12,500.00" },
-    { date: "18-Jun-2025", ref: "TXN-88501", narr: "Customer credit", dr: "₦50,000.00", cr: "—" },
-  ];
+function LedgerDrawer({ row, onClose }: { row: AccountRow; onClose: () => void }) {
+  const [balance, setBalance] = useState(row.balance);
+  const [lines, setLines] = useState<{ date: string; ref: string; narr: string; dr: string; cr: string }[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState(row.status);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [bal, entries, acct] = await Promise.all([
+          getAccountBalance(row.accountNumber).catch(() => null),
+          getAccountEntries(row.accountNumber, { size: 50 }).catch(() => null),
+          getAccount(row.accountNumber).catch(() => null),
+        ]);
+        if (cancelled) return;
+        if (bal && typeof bal === "object") {
+          const b = bal as Record<string, unknown>;
+          setBalance(String(b.availableBalance ?? b.ledgerBalance ?? b.balance ?? row.balance));
+        }
+        if (acct) {
+          setStatus(formatAccountStatus(String(acct.status)));
+        }
+        const content =
+          Array.isArray(entries)
+            ? entries
+            : entries && typeof entries === "object" && "content" in entries && Array.isArray((entries as { content: unknown }).content)
+              ? (entries as { content: Record<string, unknown>[] }).content
+              : [];
+        if (content.length) {
+          setLines(
+            content.map((e, i) => ({
+              date: String(e.valueDate ?? e.postingDate ?? e.createdAt ?? "—"),
+              ref: String(e.reference ?? e.id ?? `E-${i}`),
+              narr: String(e.narration ?? e.description ?? "—"),
+              dr: String(e.debit ?? (String(e.side ?? "").toUpperCase() === "DEBIT" ? e.amount : "—") ?? "—"),
+              cr: String(e.credit ?? (String(e.side ?? "").toUpperCase() === "CREDIT" ? e.amount : "—") ?? "—"),
+            })),
+          );
+        }
+      } catch (e) {
+        if (!cancelled) setErr(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Ledger load failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [row.accountNumber, row.balance]);
 
   return (
     <div className="acct-modal-backdrop" role="presentation" onClick={onClose}>
@@ -795,6 +763,7 @@ function LedgerDrawer({
             <p>
               {row.name} · {row.accountNumber}
             </p>
+            {err ? <p role="alert">{err}</p> : null}
           </div>
           <button type="button" className="acct-modal-close" aria-label="Close" onClick={onClose}>
             ×
@@ -803,19 +772,19 @@ function LedgerDrawer({
         <dl className="acct-ledger-meta">
           <div>
             <dt>Product</dt>
-            <dd>{row.product}</dd>
+            <dd>{row.productCode}</dd>
           </div>
           <div>
-            <dt>Linked GL</dt>
-            <dd>{row.linkedGl}</dd>
+            <dt>Branch</dt>
+            <dd>{row.branchCode}</dd>
           </div>
           <div>
             <dt>Balance</dt>
-            <dd>{row.balance}</dd>
+            <dd>{loading ? <Skeleton size="sm" /> : balance}</dd>
           </div>
           <div>
             <dt>Status</dt>
-            <dd>{row.status}</dd>
+            <dd>{status}</dd>
           </div>
         </dl>
         <div className="acct-ledger-table-wrap">
@@ -830,24 +799,29 @@ function LedgerDrawer({
               </tr>
             </thead>
             <tbody>
-              {lines.map((l) => (
-                <tr key={l.ref}>
-                  <td>{l.date}</td>
-                  <td>{l.ref}</td>
-                  <td>{l.narr}</td>
-                  <td>{l.dr}</td>
-                  <td>{l.cr}</td>
+              {loading ? (
+                <SkeletonTableBody rows={5} columns={["sm", "md", "lg", "sm", "sm"]} />
+              ) : lines.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>No ledger entries</td>
                 </tr>
-              ))}
+              ) : (
+                lines.map((l) => (
+                  <tr key={l.ref}>
+                    <td>{l.date}</td>
+                    <td>{l.ref}</td>
+                    <td>{l.narr}</td>
+                    <td>{l.dr}</td>
+                    <td>{l.cr}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         <footer className="acct-ledger-foot">
           <button type="button" className="acct-btn-ghost" onClick={onClose}>
             Close
-          </button>
-          <button type="button" className="acct-btn-primary" onClick={onEdited}>
-            Edit Account
           </button>
         </footer>
       </aside>

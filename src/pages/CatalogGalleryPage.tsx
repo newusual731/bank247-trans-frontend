@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AccountSearchDropdown,
@@ -11,6 +11,8 @@ import {
   MonthDatePicker,
 } from "../components/FormSelect";
 import { CATALOG_REGISTRY } from "../data/catalogs";
+import { fetchLiveCatalogs, type LiveCatalogBundle } from "../api/catalogs";
+import { ApiError } from "../lib/apiClient";
 import "./CatalogGalleryPage.css";
 
 /**
@@ -20,12 +22,46 @@ import "./CatalogGalleryPage.css";
 export function CatalogGalleryPage() {
   const [selectDemo, setSelectDemo] = useState("");
   const [account, setAccount] = useState("");
+  const [live, setLive] = useState<LiveCatalogBundle | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchLiveCatalogs();
+        if (!cancelled) setLive(data);
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Catalog load failed");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const registry = useMemo(() => {
+    if (!live) return CATALOG_REGISTRY;
+    return CATALOG_REGISTRY.map((cat) => {
+      const title = cat.title.toLowerCase();
+      let options = cat.options;
+      if (title.includes("gl") || title.includes("account class") || cat.source.toLowerCase().includes("gl")) {
+        if (live.glCodes.length) options = live.glCodes as unknown as typeof cat.options;
+      } else if (title.includes("permission") || title.includes("iam")) {
+        if (live.permissions.length) options = live.permissions as unknown as typeof cat.options;
+      } else if (title.includes("product") || title.includes("account type")) {
+        const merged = [...live.casaProducts, ...live.loanProducts, ...live.investmentProducts];
+        if (merged.length) options = merged as unknown as typeof cat.options;
+      }
+      return { ...cat, options };
+    });
+  }, [live]);
 
   return (
     <div className="cgal">
       <header className="cgal-head">
         <div>
           <h1>Catalogs &amp; Dropdowns</h1>
+          {loadError ? <p role="alert">{loadError}</p> : null}
+          {live ? <p className="cgal-live">Live options loaded from GL / products / IAM permissions.</p> : null}
           <p>Root Figma PNG option lists — pixel-matched menus, selects, search, tabs, pickers.</p>
         </div>
         <Link to="/settings/users" className="cgal-back">
@@ -58,7 +94,7 @@ export function CatalogGalleryPage() {
       </section>
 
       <div className="cgal-grid">
-        {CATALOG_REGISTRY.map((cat) => (
+        {registry.map((cat) => (
           <article key={cat.source} className="cgal-card">
             <header>
               <h3>{cat.title}</h3>

@@ -206,3 +206,81 @@
     grid-template-columns: 1fr;
   }
 }
+
+.txh-empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 1.25rem 0.9rem !important;
+}
+
+.txh-error {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.txh-table-wrap.is-loading {
+  opacity: 0.92;
+}
+
+.txh-recent-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.txh-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 260px);
+  height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  background: #eceef2;
+  color: #9ca3af;
+}
+
+.txh-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.82rem;
+  color: #111827;
+}
+
+.txh-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.txh-pager-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.txh-pager-actions button {
+  height: 32px;
+  padding: 0 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.txh-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

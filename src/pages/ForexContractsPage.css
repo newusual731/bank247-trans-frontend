@@ -263,6 +263,7 @@
 }
 
 .forex-field input,
+.forex-field select,
 .forex-date {
   width: 100%;
   height: 38px;

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CUSTOMER_ACCOUNT_TYPES, CURRENCIES } from "../data/accountTypeOptions";
 import "./AccountStatementReportPage.css";
+import { getAccountEntries, getAccountBalance } from "../api/ledger";
+import { ApiError } from "../lib/apiClient";
 import { ReportTabs } from "../components/ReportTabs";
 
 type StatementRow = {
@@ -34,12 +36,57 @@ export function AccountStatementReportPage() {
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
   const [branch, setBranch] = useState("Victoria Island");
   const [status, setStatus] = useState("Posted");
+  const [rows, setRows] = useState<StatementRow[]>(ROWS);
+  const [headerBalance, setHeaderBalance] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  async function loadStatement(acct: string) {
+    if (!acct.trim()) return;
+    setLoadError(null);
+    try {
+      const [res, bal] = await Promise.all([
+        getAccountEntries(acct.trim(), { size: 100 }),
+        getAccountBalance(acct.trim()).catch(() => null),
+      ]);
+      if (bal && typeof bal === "object") {
+        const b = bal as Record<string, unknown>;
+        setHeaderBalance(String(b.availableBalance ?? b.ledgerBalance ?? b.balance ?? ""));
+      }
+      const content = Array.isArray(res)
+        ? res
+        : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+          ? (res as { content: Record<string, unknown>[] }).content
+          : [];
+      if (!content.length) return;
+      setRows(
+        content.map((e) => ({
+          date: String(e.valueDate ?? e.postingDate ?? e.createdAt ?? "—"),
+          code: String(e.transactionCode ?? e.txnCode ?? e.entryType ?? "—"),
+          description: String(e.narration ?? e.description ?? "—"),
+          debit: String(e.debit ?? (String(e.side ?? "").toUpperCase() === "DEBIT" ? e.amount : "—") ?? "—"),
+          credit: String(e.credit ?? (String(e.side ?? "").toUpperCase() === "CREDIT" ? e.amount : "—") ?? "—"),
+          balance: String(e.runningBalance ?? e.balance ?? "—"),
+          currency: String(e.currency ?? currency ?? "NGN"),
+          status: String(e.status ?? "Posted"),
+        })),
+      );
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+    }
+  }
+
+  useEffect(() => {
+    void loadStatement(accountNumber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="asr">
       <ReportTabs active="asr" />
 
       <h1>Account Statement Report</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
+      {headerBalance ? <p>Ledger balance: {headerBalance}</p> : null}
 
       <div className="asr-filters">
         <label className="asr-field asr-field--date">
@@ -53,7 +100,7 @@ export function AccountStatementReportPage() {
         <label className="asr-field">
           <span>Account Number</span>
           <div className="asr-select">
-            <select value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}>
+            <select value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value); void loadStatement(e.target.value); }}>
               <option value="0051389315">0051389315</option>
               <option value="0123456789">0123456789</option>
             </select>
@@ -151,7 +198,7 @@ export function AccountStatementReportPage() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {rows.map((row, i) => (
               <tr key={i}>
                 <td className="is-left">{row.date}</td>
                 <td>{row.code}</td>

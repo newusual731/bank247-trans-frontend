@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ViewLedgerDrawer } from "../components/ViewLedgerDrawer";
 import { Link } from "react-router-dom";
 import { ExportMenu } from "../components/SharedUiBits";
@@ -11,6 +11,10 @@ import {
   GL_CODE_OPTIONS,
 } from "../data/accountTypeOptions";
 import "./TrialBalanceReportPage.css";
+import { ApiError } from "../lib/apiClient";
+import { SkeletonTableBody } from "../components/skeleton";
+import { getTrialBalance } from "../api/ledger";
+import { getFinancialTrialBalanceReport } from "../api/domain";
 
 type TbRow = {
   glCode: string;
@@ -119,6 +123,58 @@ const PREPARERS = ["Ola Oki", "Yomi Oke", "Kemi Adeosun", "Admin 01"] as const;
 
 
 export function TrialBalanceReportPage() {
+  const [apiRows, setApiRows] = useState<TbRow[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        let res: unknown;
+        try {
+          res = await getTrialBalance();
+        } catch {
+          res = await getFinancialTrialBalanceReport();
+        }
+        if (cancelled) return;
+        const lines =
+          res && typeof res === "object" && "lines" in res && Array.isArray((res as { lines: unknown }).lines)
+            ? (res as { lines: Record<string, unknown>[] }).lines
+            : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+              ? (res as { content: Record<string, unknown>[] }).content
+              : Array.isArray(res)
+                ? res
+                : [];
+        setApiRows(
+          (lines as Record<string, unknown>[]).map((l, i) => ({
+            glCode: String(l.accountCode ?? l.glCode ?? l.accountType ?? l.nature ?? i),
+            glName: String(l.accountName ?? l.glName ?? l.nature ?? "—"),
+            accountType: String(l.accountType ?? l.nature ?? "—"),
+            opening: String(l.opening ?? l.openingBalance ?? "—"),
+            debit: String(l.debit ?? "0"),
+            credit: String(l.credit ?? "0"),
+            closing: String(l.closing ?? l.closingBalance ?? "—"),
+            currency: String(l.currency ?? "NGN"),
+            branch: String(l.branchCode ?? l.branch ?? "—"),
+          })),
+        );
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to load trial balance");
+          setApiRows([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [from, setFrom] = useState("2025-06-15");
   const [to, setTo] = useState("2025-08-15");
   const [glType, setGlType] = useState<string>(GL_ACCOUNT_CLASSES[0]);
@@ -138,6 +194,7 @@ export function TrialBalanceReportPage() {
 
       <div className="tbr-title-row">
         <h1>Trial Balance Report</h1>
+      {loadError ? <p className="ctp-error" role="alert">{loadError}</p> : null}
         <button
           type="button"
           className="tbr-btn tbr-btn--ledger"
@@ -254,7 +311,14 @@ export function TrialBalanceReportPage() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row) => {
+            {loading ? (
+              <SkeletonTableBody
+                rows={8}
+                columns={["sm", "md", "sm", "sm", "sm", "sm", "sm", "xs", "sm", "action"]}
+              />
+            ) : (
+              <>
+            {(apiRows ?? ROWS).map((row) => {
               const key = `${row.glCode}-${row.branch}`;
               return (
               <tr
@@ -304,6 +368,8 @@ export function TrialBalanceReportPage() {
               </td>
               <td colSpan={3} />
             </tr>
+              </>
+            )}
           </tbody>
         </table>
       </div>

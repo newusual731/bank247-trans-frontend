@@ -428,3 +428,201 @@
     align-items: stretch;
   }
 }
+
+.bonds-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.bonds-terminate {
+  height: 34px;
+  padding: 0 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: #f08812;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bonds-terminate:hover {
+  background: #d97706;
+}
+
+.bonds-table tr.is-selected td {
+  background: #eff6ff;
+}
+
+.bonds-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted, #6b7280);
+}
+
+.bonds-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bonds-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text, #111827);
+  cursor: pointer;
+}
+
+.bonds-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bonds-gem-backdrop.gem-backdrop {
+  z-index: 1000;
+}
+
+.bonds-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.bonds-terminate {
+  height: 34px;
+  padding: 0 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: #f08812;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bonds-terminate:hover {
+  background: #d97706;
+}
+
+.bonds-table tr.is-selected td {
+  background: #eff6ff;
+}
+
+.bonds-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted, #6b7280);
+}
+
+.bonds-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bonds-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text, #111827);
+  cursor: pointer;
+}
+
+.bonds-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bonds-gem-backdrop.gem-backdrop {
+  z-index: 1000;
+}
+
+.bonds-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.bonds-terminate {
+  height: 34px;
+  padding: 0 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: #f08812;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bonds-terminate:hover {
+  background: #d97706;
+}
+
+.bonds-table tr.is-selected td {
+  background: #eff6ff;
+}
+
+.bonds-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted, #6b7280);
+}
+
+.bonds-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bonds-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text, #111827);
+  cursor: pointer;
+}
+
+.bonds-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bonds-gem-backdrop.gem-backdrop {
+  z-index: 1000;
+}

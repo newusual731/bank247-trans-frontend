@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ViewLedgerDrawer } from "../components/ViewLedgerDrawer";
 import { Link } from "react-router-dom";
 import { ReportTabs } from "../components/ReportTabs";
@@ -13,6 +13,9 @@ import {
   TXN_CODES,
 } from "../data/accountTypeOptions";
 import "./JournalReportPage.css";
+import { searchTransactions, getTransaction, dateToFromInstant, dateToToInstant } from "../api/transactions";
+import { getLedgerPosting } from "../api/postings";
+import { ApiError } from "../lib/apiClient";
 
 export type JournalReportVariant = "classic" | "dash";
 
@@ -134,6 +137,8 @@ export function JournalReportPage({
   variant?: JournalReportVariant;
 } = {}) {
   const [variant, setVariant] = useState<JournalReportVariant>(variantProp ?? "classic");
+  const [lookupRef, setLookupRef] = useState("");
+  const [lookupDetail, setLookupDetail] = useState<string | null>(null);
   const [from, setFrom] = useState("2025-06-15");
   const [to, setTo] = useState("2025-08-15");
   const [branchCode, setBranchCode] = useState<string>(BRANCH_CODES[0]);
@@ -146,6 +151,59 @@ export function JournalReportPage({
   const [txnCode, setTxnCode] = useState<string>(TXN_CODES[0]);
   const [status, setStatus] = useState<string>(POSTING_STATUSES[0]);
   const [createdBy, setCreatedBy] = useState("Yomi Oke");
+  const [classicRows, setClassicRows] = useState<ClassicRow[]>(CLASSIC_ROWS);
+  const [dashRows, setDashRows] = useState<DashRow[]>(DASH_ROWS);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await searchTransactions({ from: dateToFromInstant(from), to: dateToToInstant(to), size: 50 });
+        if (cancelled) return;
+        const content = Array.isArray(res)
+          ? res
+          : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+            ? (res as { content: Record<string, unknown>[] }).content
+            : [];
+        if (!content.length) return;
+        setClassicRows(
+          content.map((t, i) => ({
+            journalNo: String(t.reference ?? t.id ?? `JN-${i}`),
+            txnDate: String(t.valueDate ?? t.createdAt ?? "—"),
+            glCode: String(t.glCode ?? t.debitAccount ?? "—"),
+            glName: String(t.glName ?? t.narration ?? "—"),
+            debit: String(t.debitAmount ?? t.amount ?? "—"),
+            credit: String(t.creditAmount ?? t.amount ?? "—"),
+            narration: String(t.narration ?? t.description ?? "—"),
+            reference: String(t.reference ?? t.externalReference ?? "—"),
+            status: String(t.status ?? "Posted"),
+          })),
+        );
+        setDashRows(
+          content.map((t, i) => ({
+            journalNo: String(t.reference ?? t.id ?? `JN-${i}`),
+            txnCode: String(t.transactionCode ?? t.txnCode ?? "—"),
+            date: String(t.valueDate ?? t.createdAt ?? "—"),
+            glCode: String(t.glCode ?? "—"),
+            glName: String(t.glName ?? "—"),
+            debitAccount: String(t.sourceAccount ?? t.debitAccount ?? "—"),
+            creditAccount: String(t.destinationAccount ?? t.creditAccount ?? "—"),
+            amount: String(t.amount ?? "—"),
+            narration: String(t.narration ?? "—"),
+            status: String(t.status ?? "Posted"),
+            currency: String(t.currency ?? currency),
+            createdBy: String(t.createdBy ?? createdBy),
+          })),
+        );
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, currency, createdBy]);
 
   const activeVariant = variantProp ?? variant;
 
@@ -156,6 +214,21 @@ export function JournalReportPage({
       <div className="jnr-title-row">
         <div>
           <h1>Journal Report</h1>
+          <div style={{ display: "flex", gap: 8, margin: "8px 0", flexWrap: "wrap" }}>
+            <input value={lookupRef} onChange={(e) => setLookupRef(e.target.value)} placeholder="Posting / txn reference" />
+            <button type="button" onClick={() => void (async () => {
+              try {
+                let detail: unknown;
+                try { detail = await getLedgerPosting(lookupRef.trim()); }
+                catch { detail = await getTransaction(lookupRef.trim()); }
+                setLookupDetail(JSON.stringify(detail, null, 2));
+              } catch (e) {
+                setLookupDetail(e instanceof Error ? e.message : "Lookup failed");
+              }
+            })()}>Lookup</button>
+          </div>
+          {lookupDetail ? <pre style={{ fontSize: 12, maxHeight: 200, overflow: "auto" }}>{lookupDetail}</pre> : null}
+          {loadError ? <p role="alert">{loadError}</p> : null}
           {!variantProp ? (
             <div className="jnr-variant-tabs" role="tablist" aria-label="Journal report layout">
               <button
@@ -184,8 +257,8 @@ export function JournalReportPage({
             type="button"
             className="jnr-btn jnr-btn--ledger"
             onClick={() => {
-              const classic = CLASSIC_ROWS.find((r) => r.journalNo === selectedKey);
-              const dash = DASH_ROWS.find((r, i) => `${r.journalNo}-${i}` === selectedKey);
+              const classic = classicRows.find((r) => r.journalNo === selectedKey);
+              const dash = dashRows.find((r, i) => `${r.journalNo}-${i}` === selectedKey);
               const row = classic
                 ? { glCode: classic.glCode, glName: classic.glName }
                 : dash
@@ -369,7 +442,7 @@ export function JournalReportPage({
               </tr>
             </thead>
             <tbody>
-              {CLASSIC_ROWS.map((row) => (
+              {classicRows.map((row) => (
                 <tr
                   key={row.journalNo}
                   className={selectedKey === row.journalNo ? "is-selected" : undefined}
@@ -442,7 +515,7 @@ export function JournalReportPage({
               </tr>
             </thead>
             <tbody>
-              {DASH_ROWS.map((row, i) => {
+              {dashRows.map((row, i) => {
                 const key = `${row.journalNo}-${i}`;
                 return (
                 <tr

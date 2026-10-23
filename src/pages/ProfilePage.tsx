@@ -1,4 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getMyProfile, getUserByUsername } from "../api/profile";
+import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../lib/apiClient";
 import { useNavigate } from "react-router-dom";
 import { useProfileAvatar } from "../hooks/useProfileAvatar";
 import "./ProfilePage.css";
@@ -17,18 +20,63 @@ const PROFILE = {
   permissionsSummary: ["teller.cash.read", "teller.till.write", "ledger.enquiry.read"],
 };
 
-const INITIALS = PROFILE.displayName
-  .split(" ")
-  .map((p) => p[0])
-  .slice(0, 2)
-  .join("");
-
 export function ProfilePage() {
   const navigate = useNavigate();
+  const { username, permissions, bankId } = useAuth();
   const { avatarUrl, upload, clear } = useProfileAvatar();
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [profile, setProfile] = useState(PROFILE);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const initials = profile.displayName
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let me = await getMyProfile();
+        if (cancelled) return;
+        if (username) {
+          try {
+            const byName = await getUserByUsername(username) as Record<string, unknown>;
+            me = { ...me, ...byName } as typeof me;
+          } catch { /* optional enrichment */ }
+        }
+        const displayName = [me.firstName, me.lastName].filter(Boolean).join(" ") || me.username || PROFILE.displayName;
+        setProfile({
+          displayName,
+          role: PROFILE.role,
+          username: me.username ?? username ?? PROFILE.username,
+          email: me.email ?? PROFILE.email,
+          staffId: me.id ?? PROFILE.staffId,
+          branchCode: me.branchCode ?? PROFILE.branchCode,
+          branchName: PROFILE.branchName,
+          department: me.departmentCode ?? PROFILE.department,
+          lastLogin: me.lastLoginAt ?? PROFILE.lastLogin,
+          permissionsSummary: permissions.length ? permissions.slice(0, 12) : PROFILE.permissionsSummary,
+        });
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Profile load failed");
+          // Fall back to JWT identity
+          if (username) {
+            setProfile((prev) => ({
+              ...prev,
+              username,
+              displayName: username,
+              permissionsSummary: permissions.length ? permissions.slice(0, 12) : prev.permissionsSummary,
+            }));
+          }
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [username, permissions, bankId]);
 
   const onPick = async (file: File | null | undefined) => {
     if (!file) return;
@@ -56,7 +104,7 @@ export function ProfilePage() {
               onClick={() => inputRef.current?.click()}
               disabled={busy}
             >
-              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{INITIALS}</span>}
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initials}</span>}
               <span className="pfp-avatar-overlay">{busy ? "…" : "Upload"}</span>
             </button>
             <input
@@ -76,9 +124,10 @@ export function ProfilePage() {
             {error ? <p className="pfp-avatar-error">{error}</p> : null}
           </div>
           <div className="pfp-hero-meta">
-            <h1>{PROFILE.displayName}</h1>
+            <h1>{profile.displayName}</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
             <p>
-              {PROFILE.role} · {PROFILE.branchName}
+              {profile.role} · {profile.branchName}
             </p>
           </div>
           <button type="button" className="pfp-signout" onClick={() => navigate("/login")}>
@@ -91,19 +140,19 @@ export function ProfilePage() {
           <dl className="pfp-grid">
             <div>
               <dt>Username</dt>
-              <dd>{PROFILE.username}</dd>
+              <dd>{profile.username}</dd>
             </div>
             <div>
               <dt>Email</dt>
-              <dd>{PROFILE.email}</dd>
+              <dd>{profile.email}</dd>
             </div>
             <div>
               <dt>Staff ID</dt>
-              <dd>{PROFILE.staffId}</dd>
+              <dd>{profile.staffId}</dd>
             </div>
             <div>
               <dt>Department</dt>
-              <dd>{PROFILE.department}</dd>
+              <dd>{profile.department}</dd>
             </div>
           </dl>
         </section>
@@ -113,21 +162,21 @@ export function ProfilePage() {
           <dl className="pfp-grid">
             <div>
               <dt>Branch code</dt>
-              <dd>{PROFILE.branchCode}</dd>
+              <dd>{profile.branchCode}</dd>
             </div>
             <div>
               <dt>Branch name</dt>
-              <dd>{PROFILE.branchName}</dd>
+              <dd>{profile.branchName}</dd>
             </div>
             <div>
               <dt>Last sign-in</dt>
-              <dd>{PROFILE.lastLogin}</dd>
+              <dd>{profile.lastLogin}</dd>
             </div>
             <div className="pfp-span">
               <dt>Effective permissions (sample)</dt>
               <dd>
                 <ul className="pfp-perms">
-                  {PROFILE.permissionsSummary.map((p) => (
+                  {profile.permissionsSummary.map((p) => (
                     <li key={p}>{p}</li>
                   ))}
                 </ul>

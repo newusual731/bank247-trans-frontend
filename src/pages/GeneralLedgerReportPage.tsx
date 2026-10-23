@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ReportTabs } from "../components/ReportTabs";
 import {
   BRANCH_NAMES,
@@ -9,6 +9,8 @@ import {
   TXN_CODES,
 } from "../data/accountTypeOptions";
 import "./GeneralLedgerReportPage.css";
+import { searchTransactions, dateToFromInstant, dateToToInstant } from "../api/transactions";
+import { ApiError } from "../lib/apiClient";
 
 type ReportRow = {
   journalNo: string;
@@ -49,11 +51,51 @@ export function GeneralLedgerReportPage() {
   const [status, setStatus] = useState<string>(POSTING_STATUSES[0]);
   const [createdBy, setCreatedBy] = useState("Yomi Oke");
 
+  const [rows, setRows] = useState(ROWS);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await searchTransactions({ from: dateToFromInstant(from), to: dateToToInstant(to), size: 50 });
+        if (cancelled) return;
+        const content = Array.isArray(res)
+          ? res
+          : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+            ? (res as { content: Record<string, unknown>[] }).content
+            : [];
+        if (!content.length) return;
+        setRows(
+          content.map((t, i) => ({
+            journalNo: String(t.reference ?? t.id ?? `GL-${i}`),
+            txnCode: String(t.transactionCode ?? t.txnCode ?? "—"),
+            date: String(t.valueDate ?? t.createdAt ?? "—"),
+            glCode: String(t.glCode ?? "—"),
+            glName: String(t.glName ?? t.narration ?? "—"),
+            debitAccount: String(t.sourceAccount ?? t.debitAccount ?? "—"),
+            creditAccount: String(t.destinationAccount ?? t.creditAccount ?? "—"),
+            amount: String(t.amount ?? "—"),
+            description: String(t.narration ?? t.description ?? "—"),
+            status: String(t.status ?? "Posted"),
+            currency: String(t.currency ?? currency),
+          })),
+        );
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [from, to, currency]);
+
   return (
     <div className="glr">
       <ReportTabs active="gl" />
 
       <h1>General Ledger Report</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
 
       <div className="glr-filters">
         <div className="glr-field glr-field--range">
@@ -176,7 +218,7 @@ export function GeneralLedgerReportPage() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {rows.map((row, i) => (
               <tr key={i}>
                 <td>{row.journalNo}</td>
                 <td>{row.txnCode}</td>

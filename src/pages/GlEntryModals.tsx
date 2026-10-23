@@ -1,4 +1,7 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from "react";
+import { reversePosting } from "../api/ledger";
+import { createLedgerPosting, getLedgerPosting, newPostingReference, type LedgerTransactionType } from "../api/postings";
+import { ApiError } from "../lib/apiClient";
 import "./GlEntryModals.css";
 
 type Line = {
@@ -9,35 +12,92 @@ type Line = {
   currency: string;
 };
 
-const DEFAULT_LINES: Line[] = [
-  { type: "Debit", gl: "Vault-11101", description: "Customer fund", amount: "₦500,000.00", currency: "NGN" },
-  { type: "Credit", gl: "Vault-11101", description: "Cash Deposit", amount: "₦500,000.00", currency: "NGN" },
-  { type: "Debit", gl: "Vault-11101", description: "Customer fund", amount: "₦500,000.00", currency: "NGN" },
-  { type: "Credit", gl: "Vault-11101", description: "Cash Deposit", amount: "₦500,000.00", currency: "NGN" },
+const EMPTY_LINES: Line[] = [
+  { type: "Debit", gl: "", description: "", amount: "", currency: "NGN" },
+  { type: "Credit", gl: "", description: "", amount: "", currency: "NGN" },
 ];
+
+function refPrefixForType(transactionType: LedgerTransactionType): string {
+  if (transactionType === "SPECIAL_ENTRY") return "SE";
+  if (transactionType === "PNL_ENTRY") return "PL";
+  if (transactionType === "ADJUSTMENT") return "ADJ";
+  return "JN";
+}
 
 export function AddEntryModal({
   onClose,
   onPosted,
+  transactionType = "MANUAL_JOURNAL",
 }: {
   onClose: () => void;
-  onPosted?: () => void;
+  onPosted?: (reference?: string) => void;
+  transactionType?: LedgerTransactionType;
 }) {
-  const [txnCode, setTxnCode] = useState("T0004-Deposit");
-  const [postingDate, setPostingDate] = useState("2025-06-15");
-  const [reference, setReference] = useState("TXN/LC/0023-LC Booking");
-  const [currency, setCurrency] = useState("USD");
+  const refPrefix = refPrefixForType(transactionType);
+  const [txnCode, setTxnCode] = useState("");
+  const [postingDate, setPostingDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reference, setReference] = useState(() => newPostingReference(refPrefix));
+  const [currency, setCurrency] = useState("NGN");
   const [description, setDescription] = useState("");
-  const [lines, setLines] = useState<Line[]>(DEFAULT_LINES);
+  const [lines, setLines] = useState<Line[]>(EMPTY_LINES);
   const [files, setFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  function parseAmount(raw: string): string {
+    const n = raw.replace(/[^0-9.]/g, "");
+    if (!n) throw new Error("Enter a valid amount on each line");
+    return n;
+  }
+
+  function resolveAccount(raw: string): string {
+    const trimmed = raw.trim();
+    // "Vault-11101" → prefer trailing account token if present
+    const parts = trimmed.split(/[-–]/);
+    const candidate = parts.length > 1 ? parts[parts.length - 1].trim() : trimmed;
+    const acct = candidate || trimmed;
+    if (!/^[A-Za-z0-9_.:-]{2,30}$/.test(acct)) {
+      throw new Error(`Invalid ledger account: ${raw}`);
+    }
+    return acct;
+  }
+
+  async function submitPost() {
+    setBusy(true);
+    setError(null);
+    try {
+      const legs = lines.map((line) => ({
+        accountNumber: resolveAccount(line.gl),
+        direction: (line.type === "Debit" ? "DEBIT" : "CREDIT") as "DEBIT" | "CREDIT",
+        amount: parseAmount(line.amount),
+      }));
+      const debit = legs.filter((l) => l.direction === "DEBIT").reduce((s, l) => s + Number(l.amount), 0);
+      const credit = legs.filter((l) => l.direction === "CREDIT").reduce((s, l) => s + Number(l.amount), 0);
+      if (Math.abs(debit - credit) > 0.0001) {
+        throw new Error("Debit and Credit must match before posting");
+      }
+      if (legs.length < 2) throw new Error("At least two legs are required");
+      const ref = (reference.trim() || newPostingReference(refPrefix)).slice(0, 80);
+      const res = await createLedgerPosting({
+        transactionReference: ref,
+        transactionType,
+        currency: (currency || "NGN").slice(0, 3).toUpperCase(),
+        legs,
+        narration: description.trim() || txnCode || undefined,
+      });
+      onPosted?.(res.transactionReference ?? ref);
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Posting failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const addLine = () => {
-    setLines((prev) => [
-      ...prev,
-      { type: "Debit", gl: "Vault-11101", description: "", amount: "₦0.00", currency: "NGN" },
-    ]);
+    setLines((prev) => [...prev, { type: "Debit", gl: "", description: "", amount: "", currency: currency || "NGN" }]);
   };
 
   const addFiles = (list: FileList | File[] | null) => {
@@ -95,15 +155,17 @@ export function AddEntryModal({
             ×
           </button>
         </header>
+        {error ? <p role="alert">{error}</p> : null}
 
         <div className="gem-grid">
           <label>
             <span>Transaction Code</span>
-            <select value={txnCode} onChange={(e) => setTxnCode(e.target.value)}>
-              <option>T0004-Deposit</option>
-              <option>T0005-Withdrawal</option>
-              <option>T0006-Transfer</option>
-            </select>
+            <input
+              type="text"
+              placeholder="Optional"
+              value={txnCode}
+              onChange={(e) => setTxnCode(e.target.value)}
+            />
           </label>
           <label>
             <span>Posting Date</span>
@@ -111,18 +173,20 @@ export function AddEntryModal({
           </label>
           <label>
             <span>Reference</span>
-            <select value={reference} onChange={(e) => setReference(e.target.value)}>
-              <option>TXN/LC/0023-LC Booking</option>
-              <option>TXN/CASH/001</option>
-              <option>TXN/GL/ADJ</option>
-            </select>
+            <input
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Auto-generated"
+            />
           </label>
           <label>
             <span>Currency</span>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              <option>USD</option>
-              <option>NGN</option>
-              <option>EUR</option>
+              <option value="">Select</option>
+              <option value="NGN">NGN</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
             </select>
           </label>
         </div>
@@ -161,6 +225,7 @@ export function AddEntryModal({
                   </td>
                   <td>
                     <input
+                      placeholder="Ledger account"
                       value={line.gl}
                       onChange={(e) => {
                         const next = [...lines];
@@ -171,6 +236,7 @@ export function AddEntryModal({
                   </td>
                   <td>
                     <input
+                      placeholder="Description"
                       value={line.description}
                       onChange={(e) => {
                         const next = [...lines];
@@ -181,6 +247,7 @@ export function AddEntryModal({
                   </td>
                   <td>
                     <input
+                      placeholder="0.00"
                       value={line.amount}
                       onChange={(e) => {
                         const next = [...lines];
@@ -260,22 +327,18 @@ export function AddEntryModal({
           <button
             type="button"
             className="gem-outline"
-            onClick={() => {
-              onPosted?.();
-              onClose();
-            }}
+            disabled={busy}
+            onClick={() => void submitPost()}
           >
-            Post
+            {busy ? "Posting…" : "Post"}
           </button>
           <button
             type="button"
             className="gem-primary"
-            onClick={() => {
-              onPosted?.();
-              onClose();
-            }}
+            disabled={busy}
+            onClick={() => void submitPost()}
           >
-            Save Draft
+            {busy ? "Posting…" : "Post & Close"}
           </button>
         </footer>
       </div>
@@ -283,9 +346,40 @@ export function AddEntryModal({
   );
 }
 
-export function ReverseEntryModal({ onClose, onSaved }: { onClose: () => void; onSaved?: () => void }) {
+export function ReverseEntryModal({
+  onClose,
+  onSaved,
+  entryReference = "",
+}: {
+  onClose: () => void;
+  onSaved?: () => void;
+  entryReference?: string;
+}) {
   const [reason, setReason] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("2025-06-15");
+  const [reference, setReference] = useState(entryReference);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submitReverse() {
+    const ref = reference.trim();
+    if (!ref) {
+      setError("Enter the posting reference to reverse");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      try { await getLedgerPosting(reference.trim()); } catch { /* optional */ }
+      await reversePosting(ref);
+      onSaved?.();
+      onClose();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reverse failed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="gem-backdrop" role="presentation" onClick={onClose}>
@@ -297,10 +391,15 @@ export function ReverseEntryModal({ onClose, onSaved }: { onClose: () => void; o
           </button>
         </header>
 
+        {error ? <p role="alert">{error}</p> : null}
+        <label className="gem-field">
+          <span>Posting Reference</span>
+          <input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Ledger posting reference" />
+        </label>
         <dl className="gem-kv">
           <div>
             <dt>Entry ID</dt>
-            <dd>T-code T0004- Deposit</dd>
+            <dd>{reference || "T-code T0004- Deposit"}</dd>
           </div>
           <div>
             <dt>Original Description</dt>
@@ -341,12 +440,10 @@ export function ReverseEntryModal({ onClose, onSaved }: { onClose: () => void; o
           <button
             type="button"
             className="gem-primary"
-            onClick={() => {
-              onSaved?.();
-              onClose();
-            }}
+            disabled={busy}
+            onClick={() => void submitReverse()}
           >
-            Save Draft
+            {busy ? "Reversing…" : "Reverse"}
           </button>
         </footer>
       </div>

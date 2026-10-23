@@ -186,7 +186,8 @@
   font-weight: 550;
 }
 
-.plc-modal-grid input {
+.plc-modal-grid input,
+.plc-modal-grid select {
   height: 38px;
   border: 1px solid var(--border);
   border-radius: 8px;

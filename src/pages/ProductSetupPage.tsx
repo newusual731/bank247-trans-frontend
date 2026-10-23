@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CURRENCIES,
   PRODUCT_SETUP_STATUSES,
@@ -6,6 +6,8 @@ import {
   PRODUCT_TERMS,
 } from "../data/accountTypeOptions";
 import "./ProductSetupPage.css";
+import { listCasaProducts, listInvestmentProducts, listLoanProducts, createCasaProduct, createLoanProduct, createInvestmentProduct } from "../api/accounts";
+import { ApiError } from "../lib/apiClient";
 
 type ProductRow = {
   productType: string;
@@ -143,10 +145,74 @@ export function ProductSetupPage() {
   const [currency, setCurrency] = useState<string>(CURRENCIES[0]);
   const [status, setStatus] = useState<string>(PRODUCT_SETUP_STATUSES[0]);
   const [modal, setModal] = useState<Modal>(null);
+  const [apiRows, setApiRows] = useState<ProductRow[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [casa, loans, inv] = await Promise.all([
+          listCasaProducts(),
+          listLoanProducts(),
+          listInvestmentProducts(),
+        ]);
+        if (cancelled) return;
+        const toList = (res: unknown): Record<string, unknown>[] =>
+          Array.isArray(res)
+            ? (res as Record<string, unknown>[])
+            : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+              ? (res as { content: Record<string, unknown>[] }).content
+              : [];
+        const mapped: ProductRow[] = [];
+        const push = (items: Record<string, unknown>[], fallbackType: string) => {
+          for (const p of items) {
+            mapped.push({
+              productType: String(p.productType ?? p.category ?? fallbackType),
+              productName: String(p.name ?? p.productName ?? p.code ?? "—"),
+              term: String(p.term ?? p.tenor ?? p.tenure ?? "—"),
+              interestRate: String(p.interestRate ?? p.rate ?? "—"),
+              currency: String(p.currency ?? p.baseCurrency ?? "NGN"),
+              status: String(p.status ?? (p.active === false ? "Inactive" : "Active")),
+              createdBy: String(p.createdBy ?? "—"),
+              createdDate: String(p.createdAt ?? p.createdDate ?? "—"),
+              description: String(p.description ?? ""),
+            });
+          }
+        };
+        push(toList(casa), "CASA");
+        push(toList(loans), "Loan");
+        push(toList(inv), "Fixed Deposit");
+        if (mapped.length) setApiRows(mapped);
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayRows = useMemo(() => {
+    let source = apiRows ?? ROWS;
+    if (status && status !== "All") source = source.filter((r) => r.status === status);
+    if (productType && productType !== "All") {
+      const needle = productType.toLowerCase();
+      const filtered = source.filter((r) => r.productType.toLowerCase().includes(needle) || needle.includes(r.productType.toLowerCase()));
+      if (filtered.length) source = filtered;
+    }
+    if (currency && currency.length === 3) {
+      const filtered = source.filter((r) => r.currency === currency);
+      if (filtered.length) source = filtered;
+    }
+    return source;
+  }, [apiRows, productType, status, currency]);
+
 
   return (
     <div className="ps">
       <h1>Product Setup</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
 
       <div className="ps-filters">
         <label className="ps-field">
@@ -217,7 +283,7 @@ export function ProductSetupPage() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {displayRows.map((row, i) => (
               <tr key={i}>
                 <td>{row.productType}</td>
                 <td>{row.productName}</td>
@@ -272,6 +338,35 @@ function ProductFormModal({
   const [active, setActive] = useState((initial?.status ?? "Active") === "Active");
   const [description, setDescription] = useState(initial?.description ?? "");
 
+  const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  async function saveProduct() {
+    setBusy(true);
+    setSaveError(null);
+    try {
+      const code = (productName || productType || "PROD").toUpperCase().replace(/[^A-Z0-9_-]/g, "_").slice(0, 40);
+      const body = {
+        code,
+        name: productName || productType,
+        currency: currency === "NGN" || currency.length === 3 ? currency : "NGN",
+        description: description || undefined,
+        interestRate: interestRate ? Number(interestRate) : undefined,
+        status: active ? "ACTIVE" : "INACTIVE",
+      };
+      const ptLower = String(productType || "").toLowerCase();
+      if (ptLower.includes("loan")) await createLoanProduct(body);
+      else if (ptLower.includes("treasury") || ptLower.includes("deposit") || ptLower.includes("bond") || ptLower.includes("bill"))
+        await createInvestmentProduct(body);
+      else await createCasaProduct(body);
+      onClose();
+    } catch (e) {
+      setSaveError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
   return (
     <div className="ps-modal-backdrop" role="presentation" onClick={onClose}>
       <div
@@ -281,6 +376,7 @@ function ProductFormModal({
         aria-labelledby="product-form-title"
         onClick={(e) => e.stopPropagation()}
       >
+        {saveError ? <p role="alert">{saveError}</p> : null}
         <header className="ps-modal-head">
           <div>
             <h2 id="product-form-title">{mode === "edit" ? "Edit Product" : "Add New Product"}</h2>
@@ -358,8 +454,13 @@ function ProductFormModal({
             <button type="button" className="ps-btn ps-btn--outline" onClick={onClose}>
               Post
             </button>
-            <button type="button" className="ps-btn ps-btn--primary" onClick={onClose}>
-              Save Draft
+            <button
+              type="button"
+              className="ps-btn ps-btn--primary"
+              disabled={busy}
+              onClick={() => void saveProduct()}
+            >
+              {busy ? "Saving…" : "Save"}
             </button>
           </div>
         </footer>

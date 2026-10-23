@@ -249,6 +249,7 @@
 }
 
 .lc-field input,
+.lc-field select,
 .lc-field textarea,
 .lc-select select {
   width: 100%;

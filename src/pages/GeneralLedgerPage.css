@@ -47,9 +47,44 @@
   background: #f97316;
 }
 
+.gl-btn--export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #0d9488;
+}
+
+.gl-btn--export:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gl-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 36px;
+  min-width: 200px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #9ca3af;
+}
+
+.gl-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
 .gl-filters {
   display: grid;
-  grid-template-columns: minmax(280px, 1.4fr) repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(280px, 1.4fr) repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
   margin-bottom: 1.1rem;
   align-items: end;
@@ -81,7 +116,8 @@
 }
 
 .gl-range input,
-.gl-select select {
+.gl-select select,
+.gl-select input {
   height: 38px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -91,6 +127,8 @@
   color: var(--text);
   outline: none;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gl-range input {
@@ -168,6 +206,40 @@
 
 .gl-table tbody tr:hover td {
   background: #f3f4f6;
+}
+
+.gl-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.gl-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gl-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.gl-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1100px) {

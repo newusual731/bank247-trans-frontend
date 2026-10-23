@@ -1,4 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  activateTill,
+  getTill,
+  getTillDenominations,
+  getTillEntries,
+  getTillPositions,
+  getMyTillPositions,
+  requestTillClosure,
+  requestTillReopen,
+} from "../../api/teller";
+import { ApiError } from "../../lib/apiClient";
 import { useNavigate } from "react-router-dom";
 import { ClosingTillConfirm, TellerConfirmModal } from "../../components/teller/TellerConfirmModals";
 import "./TillManagementPage.css";
@@ -82,17 +93,78 @@ export function TillManagementPage() {
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [action, setAction] = useState<MenuAction>(null);
   const [selected, setSelected] = useState<TillRow | null>(null);
+  const [apiTills, setApiTills] = useState<TillRow[] | null>(null);
+  const [apiSummary, setApiSummary] = useState<SummaryRow[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let res: unknown;
+        try {
+          res = await getTillPositions();
+        } catch {
+          res = await getMyTillPositions();
+        }
+        if (cancelled) return;
+        const content = Array.isArray(res)
+          ? res
+          : res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+            ? (res as { content: Record<string, unknown>[] }).content
+            : res && typeof res === "object" && "positions" in res && Array.isArray((res as { positions: unknown }).positions)
+              ? (res as { positions: Record<string, unknown>[] }).positions
+              : [];
+        if (!content.length) return;
+        const mapped: TillRow[] = content.map((p, i) => {
+          const statusRaw = String(p.status ?? "Active");
+          const status: TillRow["status"] =
+            statusRaw.toUpperCase().includes("PEND")
+              ? "Pending"
+              : statusRaw.toUpperCase().includes("CLOSE") || statusRaw.toUpperCase().includes("DEACT")
+                ? "Deactivate"
+                : "Active";
+          return {
+            id: String(p.tellerId ?? p.tillId ?? p.id ?? `T-${i}`),
+            name: String(p.tellerName ?? p.name ?? p.tillName ?? "—"),
+            account: String(p.accountNumber ?? p.tillAccount ?? p.glAccount ?? "—"),
+            currency: String(p.currency ?? p.branchName ?? "—"),
+            opened: String(p.openedAt ?? p.createdAt ?? p.dateOpened ?? "—"),
+            status,
+            lastTxn: String(p.lastTransactionAt ?? p.lastTxnAt ?? p.updatedAt ?? "—"),
+          };
+        });
+        setApiTills(mapped);
+        setApiSummary(
+          mapped.slice(0, 5).map((t) => ({
+            id: t.id,
+            branch: String((content[0] as Record<string, unknown>)?.branchName ?? (content[0] as Record<string, unknown>)?.branchCode ?? "—"),
+            type: t.account,
+            name: t.name,
+            status: t.status,
+            created: t.opened,
+          })),
+        );
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const tills = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return TILLS.filter(
+    const source = apiTills ?? TILLS;
+    return source.filter(
       (r) =>
         !q ||
         r.id.includes(q) ||
         r.name.toLowerCase().includes(q) ||
         r.account.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, apiTills]);
 
   const runAction = (kind: MenuAction, row: TillRow, index: number) => {
     setMenuFor(null);
@@ -102,12 +174,48 @@ export function TillManagementPage() {
       return;
     }
     if (kind === "reactivate") {
-      navigate("/teller/tills/reopen");
+      void (async () => {
+        try {
+          await activateTill(row.id);
+          window.alert(`Till ${row.id} activated`);
+        } catch {
+          try {
+            await requestTillReopen(row.id, { reason: "Reopen from Till Management" });
+            window.alert(`Till ${row.id} reopen requested`);
+          } catch {
+            navigate("/teller/tills/reopen");
+          }
+        }
+      })();
       return;
     }
     if (kind === "close") {
-      navigate("/teller/tills/close");
+      void (async () => {
+        try {
+          await requestTillClosure(row.id, { reason: "Closed from Till Management" });
+        } catch {
+          /* fall through to page */
+        }
+        navigate("/teller/tills/close");
+      })();
       return;
+    }
+    if (kind === "view") {
+      void (async () => {
+        try {
+          const [till, entries, dens] = await Promise.all([
+            getTill(row.id),
+            getTillEntries(row.id).catch(() => null),
+            getTillDenominations(row.id).catch(() => null),
+          ]);
+          window.alert(
+            `Till ${row.id}\n` +
+              JSON.stringify({ till, entries, denominations: dens }, null, 2).slice(0, 1500),
+          );
+        } catch (e) {
+          window.alert(e instanceof Error ? e.message : "Till lookup failed");
+        }
+      })();
     }
     setAction(kind);
     void index;
@@ -117,6 +225,7 @@ export function TillManagementPage() {
     <div className="tmp">
       <div className="tmp-panel">
         <h1>Till Management</h1>
+        {loadError ? <p role="alert">{loadError}</p> : null}
 
         <label className="tmp-search">
           <SearchIcon />
@@ -141,7 +250,7 @@ export function TillManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {SUMMARY.map((r) => (
+              {(apiSummary ?? SUMMARY).map((r) => (
                 <tr key={r.id}>
                   <td>{r.id}</td>
                   <td>{r.branch}</td>

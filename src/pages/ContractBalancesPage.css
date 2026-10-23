@@ -218,6 +218,11 @@
   background: var(--orange);
 }
 
+.cbal-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .cbal-table-wrap,
 .cbal-card {
   background: #fff;
@@ -568,4 +573,60 @@
   .cbal-modal-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.cbal-banner-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.cbal-table tr.is-selected td {
+  background: #eff6ff;
+}
+
+.cbal-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.cbal-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.cbal-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.cbal-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cbal-gem-backdrop.gem-backdrop {
+  z-index: 1000;
+}
+
+.cbal-legend i[style] {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
 }

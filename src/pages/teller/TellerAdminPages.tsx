@@ -5,6 +5,17 @@ import "../../components/teller/TellerForm.css";
 import "./CashTxnPages.css";
 import "./EnquiryPages.css";
 import "./TellerAdminPages.css";
+import { ApiError } from "../../lib/apiClient";
+import {
+  activateTill as apiActivateTill,
+  closeTill as apiCloseTill,
+  createTill as apiCreateTill,
+  createVault as apiCreateVault,
+  getTill as apiGetTill,
+  reopenTill as apiReopenTill,
+  requestTillReopen as apiRequestTillReopen,
+  setTellerLimits as apiSetTellerLimits,
+} from "../../api/teller";
 
 const PARAM_FIELDS = [
   { label: "Overage Category", placeholder: "123- Ikeja Top", kind: "text" },
@@ -282,7 +293,21 @@ function AccountParameterSetupPanel({ onClose }: { onClose: () => void }) {
             </label>
           ))}
         </div>
-        <button type="button" className="tf-submit tap-full" onClick={onClose}>
+        <button
+          type="button"
+          className="tf-submit tap-full"
+          onClick={async () => {
+            try {
+              const branchCode = (values["Branch"] || values["Branch Code"] || "001").split("-")[0].trim() || "001";
+              const ccy = values["Currency"] || "NGN";
+              await apiCreateVault({ branchCode, currency: ccy.length === 3 ? ccy : "NGN" });
+              window.alert("Vault / parameters validated and vault created (if permitted)");
+              onClose();
+            } catch (e) {
+              window.alert(e instanceof Error ? e.message : "Validate failed");
+            }
+          }}
+        >
           Validate
         </button>
       </aside>
@@ -372,9 +397,32 @@ export function TillCreationPage() {
           <ClosingTillConfirm
             title="Open Till ?"
             message='"Do you want to open this Till"'
-            onYes={() => {
+            onYes={async () => {
               setConfirmOpen(false);
-              setDoneOpen(true);
+              try {
+                const tellerId = tellerNo.trim() || userName.trim() || "TELLER-1";
+                const branchCode = (branch.split("-")[0] || branch).trim() || "001";
+                const ccy = currency || "NGN";
+                const created = await apiCreateTill({ tellerId, branchCode, currency: ccy }) as { id?: string };
+                const tillId = String(created?.id ?? longAcct.trim() ?? "");
+                if (tillId) {
+                  try { await apiActivateTill(tillId); } catch { /* may already be active via workflow */ }
+                }
+                if (limit.trim()) {
+                  try {
+                    await apiSetTellerLimits({
+                      tellerId,
+                      branchCode,
+                      currency: ccy,
+                      depositLimit: limit.replace(/[^0-9.]/g, "") || "0",
+                      withdrawalLimit: limit.replace(/[^0-9.]/g, "") || "0",
+                    });
+                  } catch { /* limits optional if permission missing */ }
+                }
+                setDoneOpen(true);
+              } catch (e) {
+                window.alert(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Create till failed");
+              }
             }}
             onNo={() => setConfirmOpen(false)}
           />
@@ -460,7 +508,18 @@ export function ReopenTillPage() {
   if (mode === "full") {
     return (
       <>
-        <AdminFormShell title="Re-open Till" primaryLabel="Reactivate" onPrimary={() => setDoneOpen(true)}>
+        <AdminFormShell title="Re-open Till" primaryLabel="Reactivate" onPrimary={async () => {
+              try {
+                const tillId = longAcct.trim() || tellerNo.trim();
+                if (!tillId) throw new Error("Enter Till UUID in Long Account Number");
+                try { await apiGetTill(tillId); } catch { /* optional */ }
+                try { await apiRequestTillReopen(tillId, { reason: "Reopen from teller admin" }); } catch { /* may already be requested */ }
+                await apiReopenTill(tillId);
+                setDoneOpen(true);
+              } catch (e) {
+                window.alert(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Reopen failed");
+              }
+            }}>
           <label className="tf-field">
             <span>Branch</span>
             <SelectInput value={branch} onChange={setBranch} placeholder="Select" options={["232-Ikeja Top", "101-VI"]} />

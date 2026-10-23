@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useActionFeedback } from "../../components/feedback/useActionFeedback";
+import { ApiError } from "../../lib/apiClient";
+import { enquireAccount, getAccount } from "../../api/accounts";
+import { getAccountBalance } from "../../api/ledger";
+import { searchCustomers, getCustomerByCif, getCustomer } from "../../api/customers";
 import "../../components/teller/TellerForm.css";
 import "./EnquiryPages.css";
 
@@ -275,6 +279,80 @@ const CONFIG: Record<
 export function EnquiryPage({ kind }: { kind: EnquiryKind }) {
   const cfg = CONFIG[kind];
   const { showToast, feedbackUi } = useActionFeedback();
+  const [query, setQuery] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [liveRows, setLiveRows] = useState<string[][] | null>(null);
+
+  async function runSearch() {
+    setBusy(true);
+    setError(null);
+    try {
+      if (kind === "account") {
+        const q = query.trim();
+        const [enq, bal, acct] = await Promise.all([
+          enquireAccount(q),
+          getAccountBalance(q).catch(() => null),
+          getAccount(q).catch(() => null),
+        ]);
+        const r = { ...(acct as Record<string, unknown> | null), ...(enq as Record<string, unknown>) };
+        const balObj = bal as Record<string, unknown> | null;
+        setLiveRows([
+          [
+            String(r.accountNumber ?? q),
+            String(r.customerName ?? r.accountName ?? "—"),
+            String(r.productCode ?? r.productName ?? "—"),
+            String(r.status ?? "—"),
+            String(balObj?.availableBalance ?? balObj?.ledgerBalance ?? r.currency ?? "—"),
+            String(r.branchCode ?? "—"),
+          ],
+        ]);
+      } else if (kind === "customer") {
+        const q = query.trim();
+        let content: Record<string, unknown>[] = [];
+        if (/^[0-9a-fA-F-]{36}$/.test(q)) {
+          try {
+            const one = (await getCustomer(q)) as Record<string, unknown>;
+            content = [one];
+          } catch { /* fall through */ }
+        }
+        if (!content.length && /^\d{6,}$/.test(q)) {
+          try {
+            const one = (await getCustomerByCif(q)) as Record<string, unknown>;
+            content = [one];
+          } catch { /* fall through */ }
+        }
+        if (!content.length) {
+          const res = await searchCustomers({ name: q || undefined, cifNumber: /\d/.test(q) ? q : undefined, size: 20 });
+          content =
+            res && typeof res === "object" && "content" in res && Array.isArray((res as { content: unknown }).content)
+              ? (res as { content: Record<string, unknown>[] }).content
+              : [];
+        }
+        setLiveRows(
+          content.map((c) => [
+            String(c.cifNumber ?? c.id ?? "—"),
+            String(c.fullName ?? c.name ?? "—"),
+            String(c.branchCode ?? "—"),
+            String(c.customerType ?? c.type ?? "—"),
+            String(c.kycStatus ?? c.status ?? "—"),
+            String(c.status ?? "—"),
+          ]),
+        );
+      } else {
+        setLiveRows(cfg.rows);
+      }
+      showToast("Success", `${cfg.title} search completed`);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Search failed");
+      setLiveRows([]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const displayRows = liveRows ?? cfg.rows;
+
   return (
     <>
       {feedbackUi}
@@ -284,16 +362,18 @@ export function EnquiryPage({ kind }: { kind: EnquiryKind }) {
           <label className="tf-field enq-search">
             <span>Search</span>
             <div className="enq-search-row">
-              <input className="tf-input" placeholder={cfg.placeholder} />
-              <button
-                type="button"
-                className="tf-submit"
-                onClick={() => showToast("Success", `${cfg.title} search completed`)}
-              >
-                Search
+              <input
+                className="tf-input"
+                placeholder={cfg.placeholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <button type="button" className="tf-submit" disabled={busy} onClick={() => void runSearch()}>
+                {busy ? "Searching…" : "Search"}
               </button>
             </div>
           </label>
+          {error ? <p className="ctp-error" role="alert">{error}</p> : null}
           <div className="enq-table-wrap">
             <table>
               <thead>
@@ -304,10 +384,10 @@ export function EnquiryPage({ kind }: { kind: EnquiryKind }) {
                 </tr>
               </thead>
               <tbody>
-                {cfg.rows.map((row, i) => (
+                {displayRows.map((row, i) => (
                   <tr key={`${kind}-${i}`}>
-                    {row.map((cell) => (
-                      <td key={cell}>{cell}</td>
+                    {row.map((cell, j) => (
+                      <td key={`${i}-${j}`}>{cell}</td>
                     ))}
                   </tr>
                 ))}

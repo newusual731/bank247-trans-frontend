@@ -1,4 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { listNotifications, listNotificationTemplates, getNotification } from "../api/notifications";
+import { ApiError } from "../lib/apiClient";
 import "./NotificationsPage.css";
 
 type NotifStatus = "Unread" | "Read";
@@ -66,9 +68,55 @@ type Tab = "inbox" | "all";
 
 /** MVP staff inbox — chrome aligned with Till Management / Enquires.png */
 export function NotificationsPage() {
+  const [apiRows, setApiRows] = useState<NotificationRow[] | null>(null);
+  const [templates, setTemplates] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [list, tmpl] = await Promise.all([
+          listNotifications({ size: 50 }),
+          listNotificationTemplates().catch(() => []),
+        ]);
+        if (cancelled) return;
+        if (tmpl.length) {
+          setTemplates(tmpl.map((x, i) => String((x as Record<string, unknown>).code ?? (x as Record<string, unknown>).name ?? (x as Record<string, unknown>).id ?? `T-${i}`)));
+        }
+        if (!list.length) return;
+        setApiRows(
+          list.map((n, i) => {
+            const statusRaw = String(n.status ?? "Unread").toUpperCase();
+            const status: NotifStatus = statusRaw.includes("READ") && !statusRaw.includes("UNREAD") ? "Read" : "Unread";
+            const channelRaw = String(n.channel ?? "In-app").toUpperCase();
+            const channel: NotificationRow["channel"] =
+              channelRaw.includes("EMAIL") ? "Email" : channelRaw.includes("SMS") ? "SMS" : "In-app";
+            const type: NotifType = "System";
+            return {
+              id: String(n.id ?? `N-${i}`),
+              type,
+              title: String(n.subject ?? n.templateCode ?? n.requestReference ?? "Notification"),
+              message: String(n.bodyPreview ?? n.recipientMasked ?? n.requestReference ?? "—"),
+              channel,
+              status,
+              when: String(n.createdAt ?? "—"),
+            };
+          }),
+        );
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Load failed");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const [tab, setTab] = useState<Tab>("inbox");
   const [query, setQuery] = useState("");
-  const [rows, setRows] = useState(SEED);
+  const [rows, setRows] = useState<NotificationRow[]>(SEED);
+  useEffect(() => {
+    if (apiRows) setRows(apiRows);
+  }, [apiRows]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [selected, setSelected] = useState<NotificationRow | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +148,20 @@ export function NotificationsPage() {
     setSelected(row);
     if (row.status === "Unread") markRead(row.id);
     setMenuFor(null);
+    void (async () => {
+      try {
+        const full = await getNotification(row.id);
+        const f = full as Record<string, unknown>;
+        setSelected({
+          ...row,
+          title: String(f.subject ?? f.templateCode ?? row.title),
+          message: String(f.bodyPreview ?? f.body ?? f.recipientMasked ?? row.message),
+          when: String(f.createdAt ?? row.when),
+        });
+      } catch {
+        /* keep list row */
+      }
+    })();
   };
 
   return (
@@ -108,6 +170,7 @@ export function NotificationsPage() {
         <div className="nfp-head">
           <div>
             <h1>Notifications</h1>
+      {loadError ? <p role="alert">{loadError}</p> : null}
             <p className="nfp-sub">
               {unreadCount > 0 ? `${unreadCount} unread` : "You are up to date"}
             </p>
@@ -126,6 +189,10 @@ export function NotificationsPage() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
+
+        {templates.length ? (
+          <p className="nfp-sub">Templates: {templates.slice(0, 8).join(", ")}{templates.length > 8 ? "…" : ""}</p>
+        ) : null}
 
         <div className="nfp-tabs" role="tablist">
           <button

@@ -37,6 +37,15 @@
   cursor: pointer;
 }
 
+.coa-export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coa-field--search {
+  min-width: 200px;
+}
+
 .coa-toolbar {
   display: flex;
   gap: 0.65rem;
@@ -146,4 +155,73 @@
 
 .coa-table tbody tr:hover td {
   background: #fafbfc;
+}
+
+.coa-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 550;
+}
+
+.coa-pill--active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.coa-pill--inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.coa-row-action {
+  border: none;
+  background: none;
+  color: #2563eb;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 550;
+  cursor: pointer;
+  padding: 0;
+}
+
+.coa-row-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.coa-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.coa-pager-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.coa-pager-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.coa-pager-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
