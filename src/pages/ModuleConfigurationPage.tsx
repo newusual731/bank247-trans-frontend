@@ -168,12 +168,13 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
             value={branch} onChange={(e) => { setBranch(e.target.value); void loadParams(e.target.value); }}
           />
         </label>
+        {saveError ? <p className="mcfg-error">{saveError}</p> : null}
         <footer>
-          <button type="button" className="mcfg-close" onClick={onClose}>
+          <button type="button" className="mcfg-close" onClick={onClose} disabled={saving}>
             Close
           </button>
-          <button type="button" className="mcfg-submit" onClick={() => void saveParams()}>
-            Submit
+          <button type="button" className="mcfg-submit" onClick={() => void saveParams()} disabled={saving}>
+            {saving ? "Saving…" : "Submit"}
           </button>
         </footer>
       </div>

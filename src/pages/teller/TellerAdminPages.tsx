@@ -8,7 +8,6 @@ import "./TellerAdminPages.css";
 import { ApiError } from "../../lib/apiClient";
 import {
   activateTill as apiActivateTill,
-  closeTill as apiCloseTill,
   createTill as apiCreateTill,
   createVault as apiCreateVault,
   getTill as apiGetTill,

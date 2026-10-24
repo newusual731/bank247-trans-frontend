@@ -62,7 +62,7 @@ export function UserManagementPage() {
     | null;
   const [modal, setModal] = useState<ModalState>(null);
   const [apiRows, setApiRows] = useState<UserRow[] | null>(null);
-  const [roleOptions, setRoleOptions] = useState<string[]>(STAFF_ROLES);
+  const [roleOptions, setRoleOptions] = useState<string[]>(() => [...STAFF_ROLES]);
   const [iamError, setIamError] = useState<string | null>(null);
 
   useEffect(() => {
