@@ -56,7 +56,7 @@ function withGranted(base: ReturnType<typeof snapshot>, access: EffectiveAccess 
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [ready] = useState(true);
+  const [ready, setReady] = useState(() => !snapshot().authenticated);
   const [auth, setAuth] = useState(() => snapshot());
   const grantedRef = useRef<EffectiveAccess | null>(null);
 
@@ -75,7 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!auth.authenticated) return;
+    if (!auth.authenticated) {
+      setReady(true);
+      return;
+    }
     let cancelled = false;
     void getMyEffectiveAccess()
       .then((access) => {
@@ -83,6 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         /* keep the token claims when IAM is unreachable */
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
       });
     return () => {
       cancelled = true;
@@ -102,12 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth.authenticated, applySession]);
 
   const login = useCallback(async (username: string, password: string) => {
-    await loginWithPassword(username.trim(), password);
-    applySession(null);
+    setReady(false);
     try {
-      applySession(await getMyEffectiveAccess());
-    } catch {
-      applySession(null);
+      await loginWithPassword(username.trim(), password);
+      try {
+        applySession(await getMyEffectiveAccess());
+      } catch {
+        applySession(null);
+      }
+    } finally {
+      setReady(true);
     }
   }, [applySession]);
 
@@ -115,11 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuth();
     grantedRef.current = null;
     setAuth(snapshot());
+    setReady(true);
   }, []);
 
   const hasPermission = useCallback(
     (code: string) => {
-      if (auth.roles.some((role) => role === "SUPER_ADMIN" || role === "SCOPE_SUPER_ADMIN")) return true;
+      if (auth.roles.some((role) => role.replace(/^SCOPE_/, "").toUpperCase() === "SUPER_ADMIN")) return true;
       if (auth.permissions.includes(code)) return true;
       if (auth.permissions.includes(`SCOPE_${code}`)) return true;
       const bare = code.replace(/^SCOPE_/, "");

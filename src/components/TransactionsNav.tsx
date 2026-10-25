@@ -6,6 +6,7 @@ const TABS = [
   { to: "/transactions/statement-entry", label: "Statement Entry" },
   { to: "/transactions/special-entry", label: "Special Entry" },
   { to: "/transactions/pnl-entry", label: "Profit & Loss Entry" },
+  { to: "/transactions/approvals", label: "Approvals" },
 ] as const;
 
 export function TransactionsNav() {

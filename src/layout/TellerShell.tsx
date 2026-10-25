@@ -28,6 +28,7 @@ const TELLER_NAV: readonly TellerNavItem[] = [
   },
   { to: "/teller/enquiries", label: "Enquires", icon: "enq", end: true },
   { to: "/teller/tills", label: "Till Administration", icon: "till", match: "/teller/tills" },
+  { to: "/transactions/approvals", label: "Approvals", icon: "approve" },
   { to: "/teller/deposits/transaction", label: "Deposit Transaction", icon: "deposit2" },
   { to: "/teller/enquiries/image", label: "Image Enquires", icon: "image" },
   { to: "/teller/enquiries/account", label: "General Account Enq", icon: "acct" },
@@ -286,6 +287,13 @@ function TellerNavIcon({ name }: { name: string }) {
           <path d="M4.5 19c1.2-2.8 3.4-4.2 5.5-4.2S14.3 16.2 15.5 19" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           <circle cx="18" cy="16" r="2.6" stroke="currentColor" strokeWidth="1.4" />
           <path d="M18 14.8v2.4M16.8 16h2.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      );
+    case "approve":
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M8 12.5l2.5 2.5L16 9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       );
     case "bell":

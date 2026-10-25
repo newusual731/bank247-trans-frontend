@@ -9,6 +9,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: "dash" },
   { to: "/accounts", label: "Accounts", icon: "accounts" },
   { to: "/transactions", label: "Transactions", icon: "tx", matchPrefix: "/transactions" },
+  { to: "/transactions/approvals", label: "Approvals", icon: "approve" },
   { to: "/gl", label: "General Ledger", icon: "gl" },
   { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
   { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
@@ -60,12 +61,16 @@ export function AppShell() {
         </div>
         <nav className="shell-nav" aria-label="Main">
           {NAV.map((item) => {
+            const onApprovals = location.pathname.startsWith("/transactions/approvals");
             const prefixActive =
-              "matchPrefix" in item && location.pathname.startsWith(item.matchPrefix);
+              "matchPrefix" in item &&
+              location.pathname.startsWith(item.matchPrefix) &&
+              !(item.matchPrefix === "/transactions" && onApprovals);
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={item.to === "/transactions"}
                 className={({ isActive }) =>
                   `shell-nav-item${isActive || prefixActive ? " is-active" : ""}`
                 }
@@ -246,6 +251,13 @@ function NavIcon({ name }: { name: string }) {
       );
     case "bell":
       return <BellOutlineIcon />;
+    case "approve":
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M8 12.5l2.5 2.5L16 9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      );
     default:
       return null;
   }

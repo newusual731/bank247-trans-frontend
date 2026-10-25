@@ -71,8 +71,10 @@ import { TellerCashHubPage } from "./pages/TellerCashHubPage";
 import { TransactionsHubPage } from "./pages/TransactionsHubPage";
 import { TrialBalanceReportPage } from "./pages/TrialBalanceReportPage";
 import { RoleManagementPage, UserManagementPage } from "./pages/UserManagementPage";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { WelcomeDashboardPage } from "./pages/WelcomeDashboardPage";
 import { RequireAuth } from "./auth/RequireAuth";
+import { RequirePermission } from "./auth/RequirePermission";
 
 export default function App() {
   return (
@@ -81,7 +83,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        <Route element={<RequireAuth><AppShell /></RequireAuth>}>
+        <Route element={<RequireAuth><RequirePermission><AppShell /></RequirePermission></RequireAuth>}>
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/dashboard" element={<WelcomeDashboardPage />} />
           <Route path="/reports/daily-summary" element={<DailySummaryPage />} />
@@ -90,6 +92,7 @@ export default function App() {
             <Route path="statement-entry" element={<StatementEntryPage />} />
             <Route path="special-entry" element={<SpecialEntryPage />} />
             <Route path="pnl-entry" element={<PnlEntryPage />} />
+            <Route path="approvals" element={<ApprovalsPage />} />
           </Route>
           <Route path="/gl" element={<GeneralLedgerPage />} />
           <Route path="/gl/chart" element={<ChartOfAccountsPage />} />
@@ -126,7 +129,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
-        <Route element={<RequireAuth><TellerShell /></RequireAuth>}>
+        <Route element={<RequireAuth><RequirePermission><TellerShell /></RequirePermission></RequireAuth>}>
           <Route path="/teller" element={<TellerCashHubPage variant="teller" />} />
           <Route path="/teller/cash" element={<Navigate to="/teller" replace />} />
           <Route path="/teller/cash/mail" element={<TellerCashHubPage variant="mail" />} />

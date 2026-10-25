@@ -1,0 +1,127 @@
+.approvals {
+  --blue: #2563eb;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --text: #111827;
+}
+
+.approvals-head h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.approvals-head p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.approvals-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin: 1.1rem 0;
+}
+
+.approvals-tabs button {
+  height: 34px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.approvals-tabs button.is-active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.approvals-error {
+  margin: 0 0 0.75rem;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.approvals-table th,
+.approvals-table td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  font-size: 0.84rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.approvals-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4b5563;
+  background: #f9fafb;
+}
+
+.approvals-empty {
+  color: var(--muted);
+  text-align: center;
+}
+
+.approvals-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.approvals-actions button {
+  height: 30px;
+  padding: 0 0.7rem;
+  border: none;
+  border-radius: 7px;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approvals-actions button.is-secondary {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.approvals-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.approvals-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.approvals-status.is-approved {
+  color: #15803d;
+}
+
+.approvals-status.is-rejected,
+.approvals-status.is-cancelled {
+  color: #b91c1c;
+}
+
+.approvals-status.is-pending,
+.approvals-status.is-pending_approval {
+  color: #b45309;
+}
