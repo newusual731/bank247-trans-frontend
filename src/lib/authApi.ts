@@ -1,6 +1,8 @@
 import { OIDC_CLIENT_ID, OIDC_TOKEN_URL } from "./config";
 import {
   clearTokens,
+  endSession,
+  getRefreshExpiresAt,
   getRefreshToken,
   saveTokens,
   type TokenBundle,
@@ -17,8 +19,11 @@ type TokenResponse = {
   access_token: string;
   refresh_token?: string;
   expires_in?: number;
+  refresh_expires_in?: number;
   token_type?: string;
 };
+
+let refreshInFlight: Promise<TokenBundle | null> | null = null;
 
 async function exchange(body: URLSearchParams): Promise<TokenBundle> {
   const res = await fetch(OIDC_TOKEN_URL, {
@@ -41,6 +46,10 @@ async function exchange(body: URLSearchParams): Promise<TokenBundle> {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     expiresAt: Date.now() + expiresIn * 1000,
+    refreshExpiresAt:
+      typeof data.refresh_expires_in === "number"
+        ? Date.now() + data.refresh_expires_in * 1000
+        : undefined,
   };
 }
 
@@ -57,9 +66,12 @@ export async function loginWithPassword(username: string, password: string): Pro
   return bundle;
 }
 
-export async function refreshAccessToken(): Promise<TokenBundle | null> {
+async function refreshOnce(): Promise<TokenBundle | null> {
   const refresh = getRefreshToken();
-  if (!refresh) return null;
+  if (!refresh) {
+    endSession();
+    return null;
+  }
   const body = new URLSearchParams({
     grant_type: "refresh_token",
     client_id: OIDC_CLIENT_ID,
@@ -67,12 +79,25 @@ export async function refreshAccessToken(): Promise<TokenBundle | null> {
   });
   try {
     const bundle = await exchange(body);
+    if (!bundle.refreshToken) bundle.refreshToken = refresh;
+    if (bundle.refreshExpiresAt == null && getRefreshExpiresAt() > 0) {
+      bundle.refreshExpiresAt = getRefreshExpiresAt();
+    }
     saveTokens(bundle);
     return bundle;
   } catch {
-    clearTokens();
+    endSession();
     return null;
   }
+}
+
+export async function refreshAccessToken(): Promise<TokenBundle | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshOnce().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 export function logout(): void {

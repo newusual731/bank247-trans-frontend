@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "./config";
 import {
+  endSession,
   getAccessToken,
   getBankIdFromToken,
   getTokenExpiresAt,
@@ -61,12 +62,26 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
     if (bankId) hdrs["X-Bank247-Tenant"] = bankId;
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: hdrs,
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal,
-  });
+  const send = () =>
+    fetch(url, {
+      method,
+      headers: hdrs,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
+    });
+
+  let res = await send();
+
+  if (res.status === 401 && auth) {
+    const refreshed = await refreshAccessToken();
+    if (!refreshed) throw new ApiError(401, "Not signed in");
+    hdrs.Authorization = `Bearer ${refreshed.accessToken}`;
+    res = await send();
+    if (res.status === 401) {
+      endSession();
+      throw new ApiError(401, "Not signed in");
+    }
+  }
 
   if (res.status === 204) return undefined as T;
 

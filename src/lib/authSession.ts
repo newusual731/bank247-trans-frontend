@@ -1,12 +1,18 @@
 const ACCESS_KEY = "bank247.accessToken";
 const REFRESH_KEY = "bank247.refreshToken";
 const EXPIRES_KEY = "bank247.tokenExpiresAt";
+const REFRESH_EXPIRES_KEY = "bank247.refreshExpiresAt";
+const SKEW_MS = 15_000;
+const MAX_TIMER_MS = 2_147_483_647;
 
 export type TokenBundle = {
   accessToken: string;
   refreshToken?: string;
   expiresAt: number;
+  refreshExpiresAt?: number;
 };
+
+let sessionWatchTimer: number | null = null;
 
 export function getAccessToken(): string | null {
   try {
@@ -32,17 +38,83 @@ export function getTokenExpiresAt(): number {
   }
 }
 
+export function getRefreshExpiresAt(): number {
+  try {
+    return Number(sessionStorage.getItem(REFRESH_EXPIRES_KEY) || 0);
+  } catch {
+    return 0;
+  }
+}
+
 export function saveTokens(bundle: TokenBundle): void {
   sessionStorage.setItem(ACCESS_KEY, bundle.accessToken);
   if (bundle.refreshToken) sessionStorage.setItem(REFRESH_KEY, bundle.refreshToken);
   else sessionStorage.removeItem(REFRESH_KEY);
   sessionStorage.setItem(EXPIRES_KEY, String(bundle.expiresAt));
+  if (bundle.refreshExpiresAt != null) {
+    sessionStorage.setItem(REFRESH_EXPIRES_KEY, String(bundle.refreshExpiresAt));
+  } else {
+    sessionStorage.removeItem(REFRESH_EXPIRES_KEY);
+  }
 }
 
 export function clearTokens(): void {
   sessionStorage.removeItem(ACCESS_KEY);
   sessionStorage.removeItem(REFRESH_KEY);
   sessionStorage.removeItem(EXPIRES_KEY);
+  sessionStorage.removeItem(REFRESH_EXPIRES_KEY);
+  stopSessionWatch();
+}
+
+export function notifyAuthLost(): void {
+  window.dispatchEvent(new Event("bank247-auth-lost"));
+}
+
+/** Drop the stored session and tell the app to return to the login screen. */
+export function endSession(): void {
+  clearTokens();
+  notifyAuthLost();
+}
+
+export function stopSessionWatch(): void {
+  if (sessionWatchTimer != null) {
+    window.clearTimeout(sessionWatchTimer);
+    sessionWatchTimer = null;
+  }
+}
+
+function refreshTokenExpired(): boolean {
+  const at = getRefreshExpiresAt();
+  return at > 0 && Date.now() >= at - SKEW_MS;
+}
+
+/**
+ * Refresh as the access token expires. `refresh` returns false when the
+ * refresh token is missing or rejected; the caller must already have ended
+ * the session in that case.
+ */
+export function watchSession(refresh: () => Promise<boolean>, onRefreshed?: () => void): void {
+  stopSessionWatch();
+  const access = getAccessToken();
+  const expiresAt = getTokenExpiresAt();
+  if (!access || !expiresAt) return;
+
+  const refreshAt = getRefreshExpiresAt();
+  const accessDeadline = expiresAt - SKEW_MS;
+  const deadline = refreshAt > 0 ? Math.min(accessDeadline, refreshAt - SKEW_MS) : accessDeadline;
+  const delay = Math.min(MAX_TIMER_MS, Math.max(0, deadline - Date.now()));
+  sessionWatchTimer = window.setTimeout(() => {
+    sessionWatchTimer = null;
+    if (refreshTokenExpired()) {
+      endSession();
+      return;
+    }
+    void refresh().then((ok) => {
+      if (!ok) return;
+      onRefreshed?.();
+      watchSession(refresh, onRefreshed);
+    });
+  }, delay);
 }
 
 export function isAuthenticated(): boolean {

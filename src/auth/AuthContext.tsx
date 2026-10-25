@@ -2,17 +2,20 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { loginWithPassword, logout as clearAuth } from "../lib/authApi";
+import { loginWithPassword, logout as clearAuth, refreshAccessToken } from "../lib/authApi";
 import {
   getAccessToken,
   getBankIdFromToken,
   getDisplayNameFromToken,
   getPermissionsFromToken,
   isAuthenticated,
+  stopSessionWatch,
+  watchSession,
 } from "../lib/authSession";
 
 type AuthState = {
@@ -41,6 +44,24 @@ function snapshot() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready] = useState(true);
   const [auth, setAuth] = useState(() => snapshot());
+
+  useEffect(() => {
+    const onLost = () => setAuth(snapshot());
+    window.addEventListener("bank247-auth-lost", onLost);
+    return () => window.removeEventListener("bank247-auth-lost", onLost);
+  }, []);
+
+  useEffect(() => {
+    if (!auth.authenticated) {
+      stopSessionWatch();
+      return;
+    }
+    watchSession(
+      async () => Boolean(await refreshAccessToken()),
+      () => setAuth(snapshot()),
+    );
+    return () => stopSessionWatch();
+  }, [auth.authenticated]);
 
   const login = useCallback(async (username: string, password: string) => {
     await loginWithPassword(username.trim(), password);
