@@ -148,6 +148,16 @@ export function getPermissionsFromToken(token: string | null = getAccessToken())
   return [];
 }
 
+export function getRolesFromToken(token: string | null = getAccessToken()): string[] {
+  if (!token) return [];
+  const payload = decodeJwtPayload(token);
+  if (!payload) return [];
+  const claim = payload.bank247_roles;
+  if (Array.isArray(claim)) return claim.map(String);
+  if (typeof claim === "string") return claim.split(/\s+/).filter(Boolean);
+  return [];
+}
+
 export function getBankIdFromToken(token: string | null = getAccessToken()): string | null {
   if (!token) return null;
   const payload = decodeJwtPayload(token);

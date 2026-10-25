@@ -1,5 +1,17 @@
 import { apiRequest } from "../lib/apiClient";
 
+export type EffectiveAccess = {
+  userId: string;
+  roleCodes: string[];
+  permissionCodes: string[];
+  branchScopes: string[];
+};
+
+/** Roles and permissions currently in force, read from IAM rather than the login token. */
+export function getMyEffectiveAccess() {
+  return apiRequest<EffectiveAccess>("/api/v1/iam/users/me/effective-access");
+}
+
 export function createIamRole(body: {
   code: string;
   name: string;
