@@ -109,7 +109,20 @@ export function deactivateGlAccount(code: string) {
   return apiRequest(`/api/v1/gl/accounts/${encodeURIComponent(code)}/deactivate`, { method: "POST" });
 }
 
-export type ProductGlRole = "PRINCIPAL" | "INTEREST" | "CHARGES";
+/** Product Factory + FA BRD roles (ledger ProductGlRole). */
+export type ProductGlRole =
+  | "REPORTING"
+  | "PRINCIPAL"
+  | "INTEREST_ACCRUAL"
+  | "INTEREST_EXPENSE"
+  | "INTEREST_INCOME"
+  | "INTEREST_RECEIVABLE"
+  | "INTEREST_PAYABLE"
+  | "INTEREST"
+  | "CHARGES"
+  | "WHT"
+  | "VAT";
+
 export type ProductGlMappingStatus = "ACTIVE" | "INACTIVE";
 
 export type ProductGlMapping = {

@@ -35,8 +35,20 @@ export const INSTRUMENT_PRODUCT_CODES = [
   "CP-30-Commercial Paper (30D)",
 ] as const;
 
-/** GL role in product ledger mapping (GL ACCOUNT TYPE.png) */
-export const GL_LEDGER_ROLES = ["Principal GL", "Interest GL", "Charges GL"] as const;
+/** GL role in product ledger mapping (Product Factory + FA) */
+export const GL_LEDGER_ROLES = [
+  "Reporting GL",
+  "Principal GL",
+  "Interest accrual GL",
+  "Interest expense GL",
+  "Interest income GL",
+  "Interest receivable GL",
+  "Interest payable GL",
+  "Interest GL",
+  "Charges GL",
+  "Withholding tax GL",
+  "VAT GL",
+] as const;
 
 /**
  * Party scope filter (CUSTOME/INTERNAL.png).
@@ -87,17 +99,26 @@ export const BRANCH_NAMES = ["Victoria Island", "Ogba", "Ikeja", "Surulere", "Aj
 export const POSTING_STATUSES = ["Posted", "Reversed", "Pending"] as const;
 export const TXN_CODES = ["DEP1001", "DEP1002", "DEP1003", "DEP104", "DEP1005"] as const;
 
-/** PRODUCT TYPE.png */
+/** PRODUCT TYPE.png + CASA */
 export const PRODUCT_SETUP_TYPES = [
+  "All",
+  "Savings Account",
+  "Current Account",
   "Fixed Deposit",
   "Treasury Bill",
   "Loan",
   "Bond",
-  "Forex",
+  "Call Deposit",
 ] as const;
 
 /** Term options on Add New Product (MODAL.png) */
 export const PRODUCT_TERMS = ["30 Days", "90 Days", "182 Days", "12 months", "30 Months"] as const;
 
-export const PRODUCT_SETUP_STATUSES = ["Active", "Inactive"] as const;
+export const PRODUCT_SETUP_STATUSES = [
+  "All",
+  "ACTIVE",
+  "PENDING_APPROVAL",
+  "INACTIVE",
+  "EXPIRED",
+] as const;
 

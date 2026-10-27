@@ -36,16 +36,45 @@ type ModalState =
   | { kind: "view"; row: MappingRow }
   | null;
 
-const PRODUCT_TYPES = ["Fixed Deposit", "Treasury Bill", "Loan", "Bond", "Placement"] as const;
+const PRODUCT_TYPES = [
+  "Fixed Deposit",
+  "Treasury Bill",
+  "Loan",
+  "Bond",
+  "Placement",
+  "Savings",
+  "Current",
+] as const;
 const CURRENCIES = ["NGN", "USD", "EUR"] as const;
 const STATUS_FILTERS = ["All", "ACTIVE", "INACTIVE"] as const;
-const ROLE_FILTERS = ["All", "PRINCIPAL", "INTEREST", "CHARGES"] as const;
+const ROLE_FILTERS = [
+  "All",
+  "REPORTING",
+  "PRINCIPAL",
+  "INTEREST_ACCRUAL",
+  "INTEREST_EXPENSE",
+  "INTEREST_INCOME",
+  "INTEREST_RECEIVABLE",
+  "INTEREST_PAYABLE",
+  "INTEREST",
+  "CHARGES",
+  "WHT",
+  "VAT",
+] as const;
 const PAGE_SIZE = 20;
 
 const ROLE_LABEL: Record<ProductGlRole, string> = {
+  REPORTING: "Reporting GL",
   PRINCIPAL: "Principal GL",
+  INTEREST_ACCRUAL: "Interest accrual GL",
+  INTEREST_EXPENSE: "Interest expense GL",
+  INTEREST_INCOME: "Interest income GL",
+  INTEREST_RECEIVABLE: "Interest receivable GL",
+  INTEREST_PAYABLE: "Interest payable GL",
   INTEREST: "Interest GL",
   CHARGES: "Charges GL",
+  WHT: "Withholding tax GL",
+  VAT: "VAT GL",
 };
 
 function mapRow(m: ProductGlMapping): MappingRow {

@@ -458,6 +458,7 @@ function AddGlModal({
   const [parentCode, setParentCode] = useState("");
   const [currency, setCurrency] = useState<string>("NGN");
   const [postable, setPostable] = useState(true);
+  const [headers, setHeaders] = useState<{ code: string; description?: string; nature?: string }[]>([]);
   const [status, setStatus] = useState(
     initial ? (initial.status.toUpperCase() === "ACTIVE" ? "ACTIVE" : "INACTIVE") : "ACTIVE",
   );
@@ -471,6 +472,27 @@ function AddGlModal({
       document.body.style.overflow = prev;
     };
   }, []);
+
+  useEffect(() => {
+    if (isEdit) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await listGlAccounts({ status: "ACTIVE", size: 100 });
+        if (cancelled) return;
+        setHeaders(
+          (res.content ?? [])
+            .filter((g) => g.postable === false)
+            .map((g) => ({ code: g.code, description: g.description, nature: g.nature })),
+        );
+      } catch {
+        if (!cancelled) setHeaders([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit]);
 
   async function submit() {
     setError(null);
@@ -501,6 +523,10 @@ function AddGlModal({
       setError("GL code and description are required");
       return;
     }
+    if (postable && !currency.trim()) {
+      setError("Currency is required for postable GLs");
+      return;
+    }
     setBusy(true);
     try {
       const glCode = code.trim().toUpperCase();
@@ -510,7 +536,7 @@ function AddGlModal({
         nature,
         parentCode: parentCode.trim() ? parentCode.trim().toUpperCase() : undefined,
         postable,
-        currency: currency.slice(0, 3).toUpperCase(),
+        currency: postable ? currency.slice(0, 3).toUpperCase() : undefined,
       });
       await onDone(`GL ${glCode} created`);
     } catch (e) {
@@ -571,6 +597,11 @@ function AddGlModal({
           </>
         ) : (
           <>
+            <p className="gem-warn" style={{ marginTop: 0 }}>
+              Numeric codes must be in FA range 10000–89999. Nature must match the band (e.g. 20001 →
+              LIABILITY). Prefer postable leaves under seeded headers (20000 Savings, 11500 Till,
+              11000 Vault…).
+            </p>
             <div className="gem-grid">
               <label>
                 <span>GL Code</span>
@@ -592,7 +623,29 @@ function AddGlModal({
                 </select>
               </label>
               <label>
-                <span>Parent Code</span>
+                <span>Parent header (COA)</span>
+                <select
+                  value={parentCode}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setParentCode(next);
+                    const hdr = headers.find((h) => h.code === next);
+                    if (hdr?.nature && NATURES.includes(hdr.nature.toUpperCase() as (typeof NATURES)[number])) {
+                      setNature(hdr.nature.toUpperCase());
+                    }
+                  }}
+                >
+                  <option value="">— none / top-level —</option>
+                  {headers.map((h) => (
+                    <option key={h.code} value={h.code}>
+                      {h.code} · {h.description || h.code}
+                      {h.nature ? ` (${h.nature})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Or type parent code</span>
                 <input
                   value={parentCode}
                   onChange={(e) => setParentCode(e.target.value)}
@@ -600,25 +653,27 @@ function AddGlModal({
                 />
               </label>
               <label>
-                <span>Currency</span>
-                <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                  {CURRENCIES.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
                 <span>Postable</span>
                 <select
                   value={postable ? "true" : "false"}
                   onChange={(e) => setPostable(e.target.value === "true")}
                 >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="true">Yes (leaf)</option>
+                  <option value="false">No (header)</option>
                 </select>
               </label>
+              {postable ? (
+                <label>
+                  <span>Currency</span>
+                  <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                    {CURRENCIES.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </div>
             <label className="gem-desc">
               <span>Description</span>

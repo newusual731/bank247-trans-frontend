@@ -64,11 +64,79 @@ export type CasaProduct = {
   code: string;
   name: string;
   accountType?: string;
+  productGroup?: string;
+  balanceType?: string;
   currency: string;
-  status?: string;
+  minimumBalance?: number | string;
+  annualInterestRate?: number | string;
+  interestBasisDays?: number;
+  reportingLedgerAccount?: string | null;
+  interestAccrualLedgerAccount?: string | null;
   interestExpenseLedgerAccount?: string | null;
+  withholdingTaxLedgerAccount?: string | null;
+  vatLedgerAccount?: string | null;
+  monthlyMaintenanceCharge?: number | string;
+  cashLiteCharge?: number | string;
   chargeIncomeLedgerAccount?: string | null;
+  dormancyInactiveDays?: number;
+  status?: string;
+  workflowRequestId?: string | null;
+  createdAt?: string | null;
 };
+
+export type LoanProduct = {
+  id?: string;
+  code: string;
+  name: string;
+  currency: string;
+  minimumAmount?: number | string;
+  maximumAmount?: number | string;
+  minimumTenorMonths?: number;
+  maximumTenorMonths?: number;
+  defaultAnnualInterestRate?: number | string;
+  repaymentFrequency?: string;
+  repaymentMethod?: string;
+  interestBasisDays?: number;
+  principalLedgerAccount?: string | null;
+  interestReceivableLedgerAccount?: string | null;
+  interestIncomeLedgerAccount?: string | null;
+  status?: string;
+  workflowRequestId?: string | null;
+  createdAt?: string | null;
+};
+
+export type InvestmentProduct = {
+  id?: string;
+  code: string;
+  name: string;
+  investmentType?: string;
+  currency: string;
+  minimumAmount?: number | string;
+  maximumAmount?: number | string;
+  minimumTenorDays?: number;
+  maximumTenorDays?: number;
+  defaultAnnualInterestRate?: number | string;
+  interestMethod?: string;
+  interestBasisDays?: number;
+  withholdingTaxRate?: number | string;
+  earlyRedemptionPenaltyRate?: number | string;
+  earlyRedemptionPenaltyBasis?: string;
+  principalLiabilityLedgerAccount?: string | null;
+  interestPayableLedgerAccount?: string | null;
+  interestExpenseLedgerAccount?: string | null;
+  withholdingTaxLedgerAccount?: string | null;
+  penaltyIncomeLedgerAccount?: string | null;
+  interestPaymentFrequency?: string;
+  noticePeriodDays?: number;
+  contributionFrequency?: string;
+  contributionAmount?: number | string;
+  stepUpIncrement?: number | string;
+  status?: string;
+  workflowRequestId?: string | null;
+  createdAt?: string | null;
+};
+
+export type ProductKind = "casa" | "loans" | "investments";
 
 function toQuery(params: Record<string, string | number | undefined | null>): string {
   const qs = new URLSearchParams();
@@ -115,13 +183,37 @@ export function listCasaProducts(params?: { status?: string; page?: number; size
   );
 }
 
+export function getCasaProduct(code: string) {
+  return apiRequest<CasaProduct>(`/api/v1/products/casa/${encodeURIComponent(code)}`);
+}
+
 export function listLoanProducts(params?: { status?: string; page?: number; size?: number }) {
-  return apiRequest(`/api/v1/products/loans${toQuery({ status: params?.status, page: params?.page ?? 0, size: params?.size ?? 100 })}`);
+  return apiRequest<PageResponse<LoanProduct> | LoanProduct[]>(
+    `/api/v1/products/loans${toQuery({
+      status: params?.status,
+      page: params?.page ?? 0,
+      size: params?.size ?? 100,
+    })}`,
+  );
+}
+
+export function getLoanProduct(code: string) {
+  return apiRequest<LoanProduct>(`/api/v1/products/loans/${encodeURIComponent(code)}`);
 }
 
 export function listInvestmentProducts(params?: { status?: string; page?: number; size?: number }) {
-  return apiRequest(
-    `/api/v1/products/investments${toQuery({ status: params?.status, page: params?.page ?? 0, size: params?.size ?? 100 })}`,
+  return apiRequest<PageResponse<InvestmentProduct> | InvestmentProduct[]>(
+    `/api/v1/products/investments${toQuery({
+      status: params?.status,
+      page: params?.page ?? 0,
+      size: params?.size ?? 100,
+    })}`,
+  );
+}
+
+export function getInvestmentProduct(code: string) {
+  return apiRequest<InvestmentProduct>(
+    `/api/v1/products/investments/${encodeURIComponent(code)}`,
   );
 }
 
@@ -149,15 +241,55 @@ export function reactivateAccount(accountNumber: string) {
 }
 
 export function createCasaProduct(body: Record<string, unknown>) {
-  return apiRequest("/api/v1/products/casa", { method: "POST", body });
+  return apiRequest<CasaProduct>("/api/v1/products/casa", { method: "POST", body });
+}
+
+export function submitCasaProduct(code: string) {
+  return apiRequest<CasaProduct>(`/api/v1/products/casa/${encodeURIComponent(code)}/submit`, {
+    method: "POST",
+  });
+}
+
+export function activateCasaProduct(code: string, workflowRequestId: string) {
+  return apiRequest<CasaProduct>(
+    `/api/v1/products/casa/${encodeURIComponent(code)}/activate/${encodeURIComponent(workflowRequestId)}`,
+    { method: "POST" },
+  );
 }
 
 export function createLoanProduct(body: Record<string, unknown>) {
-  return apiRequest("/api/v1/products/loans", { method: "POST", body });
+  return apiRequest<LoanProduct>("/api/v1/products/loans", { method: "POST", body });
+}
+
+export function submitLoanProduct(code: string) {
+  return apiRequest<LoanProduct>(`/api/v1/products/loans/${encodeURIComponent(code)}/submit`, {
+    method: "POST",
+  });
+}
+
+export function activateLoanProduct(code: string, workflowRequestId: string) {
+  return apiRequest<LoanProduct>(
+    `/api/v1/products/loans/${encodeURIComponent(code)}/activate/${encodeURIComponent(workflowRequestId)}`,
+    { method: "POST" },
+  );
 }
 
 export function createInvestmentProduct(body: Record<string, unknown>) {
-  return apiRequest("/api/v1/products/investments", { method: "POST", body });
+  return apiRequest<InvestmentProduct>("/api/v1/products/investments", { method: "POST", body });
+}
+
+export function submitInvestmentProduct(code: string) {
+  return apiRequest<InvestmentProduct>(
+    `/api/v1/products/investments/${encodeURIComponent(code)}/submit`,
+    { method: "POST" },
+  );
+}
+
+export function activateInvestmentProduct(code: string, workflowRequestId: string) {
+  return apiRequest<InvestmentProduct>(
+    `/api/v1/products/investments/${encodeURIComponent(code)}/activate/${encodeURIComponent(workflowRequestId)}`,
+    { method: "POST" },
+  );
 }
 
 export function createStandingOrder(body: {

@@ -11,11 +11,26 @@
 }
 
 .ps h1 {
-  margin: 0 0 1.1rem;
+  margin: 0 0 0.35rem;
   font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text);
+}
+
+.ps-hint {
+  margin: 0 0 1.1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.ps-section {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--muted);
+  letter-spacing: 0.01em;
 }
 
 .ps-filters {
@@ -237,14 +252,20 @@
 
 .ps-modal {
   width: min(560px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: auto;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
   padding: 1.35rem 1.5rem 1.3rem;
 }
 
+.ps-modal--wide {
+  width: min(720px, 100%);
+}
+
 .ps-modal--view {
-  width: min(480px, 100%);
+  width: min(520px, 100%);
 }
 
 .ps-modal-head {
