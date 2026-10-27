@@ -13,6 +13,9 @@ export function catalogLoadMessage(error: unknown): string {
     }
     return error.message || `Couldn’t load catalog (${error.status}).`;
   }
+  if (error instanceof TypeError || (error instanceof Error && /failed to fetch/i.test(error.message))) {
+    return "Can’t reach the API (network or CORS). Check that you’re on the bank app URL and the gateway is up.";
+  }
   if (error instanceof Error && error.message) return error.message;
   return "Couldn’t load catalog. Try again.";
 }
