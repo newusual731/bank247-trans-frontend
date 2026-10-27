@@ -927,25 +927,25 @@ function ProductFormModal({
                 </div>
               </label>
 
-              <p className="ps-section ps-field--full">PROPERTY.2 — TXN.TYPE (empty = ALL)</p>
+              <p className="ps-section ps-field--full">Allowed transactions</p>
               <div className="ps-field ps-field--full">
-                <span>Allowed TXN.TYPE</span>
+                <span>Transaction types</span>
                 {catalogLoading ? (
-                  <p className="ps-check-empty">Loading TXN.TYPE catalog…</p>
+                  <p className="ps-check-empty">Loading…</p>
                 ) : catalogError ? (
                   <p className="ps-check-empty" role="alert">
-                    Could not load TXN.TYPE ({catalogError}). Open{" "}
-                    <Link to="/settings/product-factory">Product Factory</Link> or retry.
+                    Couldn’t load transaction types. Check{" "}
+                    <Link to="/settings/product-factory">product catalogs</Link> or try again.
                   </p>
                 ) : txnTypes.length === 0 ? (
                   <p className="ps-check-empty">
-                    No TXN.TYPE rows yet. Seed/create them in{" "}
-                    <Link to="/settings/product-factory">Product Factory → TXN.TYPE</Link>. Leave empty
-                    to allow ALL.
+                    No transaction types configured yet. Add them under{" "}
+                    <Link to="/settings/product-factory">product catalogs</Link>. Leave this empty to
+                    allow all types.
                   </p>
                 ) : (
                   <>
-                    <div className="ps-check-list" role="group" aria-label="Allowed TXN.TYPE">
+                    <div className="ps-check-list" role="group" aria-label="Allowed transaction types">
                       {txnTypes.map((t) => (
                         <label key={t.code}>
                           <input
@@ -961,8 +961,8 @@ function ProductFormModal({
                     </div>
                     <p className="ps-check-empty" style={{ marginTop: "0.35rem" }}>
                       {selectedTxns.length === 0
-                        ? "None selected → ALL txn types allowed."
-                        : `${selectedTxns.length} selected.`}
+                        ? "Nothing selected — all transaction types are allowed."
+                        : `${selectedTxns.length} selected`}
                     </p>
                   </>
                 )}
