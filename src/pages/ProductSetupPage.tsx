@@ -499,6 +499,8 @@ function ProductFormModal({
   const [properties, setProperties] = useState<ProductPropertyDefinition[]>([]);
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [glAccounts, setGlAccounts] = useState<GlAccountSummary[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -513,6 +515,8 @@ function ProductFormModal({
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setCatalogLoading(true);
+      setCatalogError(null);
       try {
         const [g, t, r, props, gls] = await Promise.all([
           listProductGroups("ACTIVE"),
@@ -522,10 +526,10 @@ function ProductFormModal({
           listGlAccounts({ status: "ACTIVE", size: 200 }),
         ]);
         if (cancelled) return;
-        setGroups(g);
-        setTxnTypes(t);
-        setRestrictionCodes(r);
-        setProperties(props);
+        setGroups(Array.isArray(g) ? g : []);
+        setTxnTypes(Array.isArray(t) ? t : []);
+        setRestrictionCodes(Array.isArray(r) ? r : []);
+        setProperties(Array.isArray(props) ? props : []);
         setGlAccounts((gls.content ?? []).filter((x) => x.postable !== false));
         if (!productGroup && g.length) {
           const savings = g.find((x) => x.code.includes("SAVINGS"));
@@ -538,8 +542,14 @@ function ProductFormModal({
           }
           return next;
         });
-      } catch {
-        /* keep form usable if catalogs temporarily unavailable */
+      } catch (e) {
+        if (!cancelled) {
+          setCatalogError(
+            e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to load catalogs",
+          );
+        }
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
       }
     })();
     return () => {
@@ -547,6 +557,16 @@ function ProductFormModal({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load catalogs once on open
   }, []);
+
+  function toggleTxn(code: string) {
+    setSelectedTxns((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+  }
+
+  function toggleRestriction(code: string) {
+    setSelectedRestrictions((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+    );
+  }
 
   function setProp(code: string, value: string) {
     setPropertyValues((prev) => ({ ...prev, [code]: value }));
@@ -906,23 +926,45 @@ function ProductFormModal({
               </label>
 
               <p className="ps-section ps-field--full">PROPERTY.2 — TXN.TYPE (empty = ALL)</p>
-              <label className="ps-field ps-field--full">
+              <div className="ps-field ps-field--full">
                 <span>Allowed TXN.TYPE</span>
-                <select
-                  multiple
-                  size={Math.min(8, Math.max(4, txnTypes.length))}
-                  value={selectedTxns}
-                  onChange={(e) =>
-                    setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
-                  }
-                >
-                  {txnTypes.map((t) => (
-                    <option key={t.code} value={t.code}>
-                      {t.code} — {t.description}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                {catalogLoading ? (
+                  <p className="ps-check-empty">Loading TXN.TYPE catalog…</p>
+                ) : catalogError ? (
+                  <p className="ps-check-empty" role="alert">
+                    Could not load TXN.TYPE ({catalogError}). Open{" "}
+                    <Link to="/settings/product-factory">Product Factory</Link> or retry.
+                  </p>
+                ) : txnTypes.length === 0 ? (
+                  <p className="ps-check-empty">
+                    No TXN.TYPE rows yet. Seed/create them in{" "}
+                    <Link to="/settings/product-factory">Product Factory → TXN.TYPE</Link>. Leave empty
+                    to allow ALL.
+                  </p>
+                ) : (
+                  <>
+                    <div className="ps-check-list" role="group" aria-label="Allowed TXN.TYPE">
+                      {txnTypes.map((t) => (
+                        <label key={t.code}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTxns.includes(t.code)}
+                            onChange={() => toggleTxn(t.code)}
+                          />
+                          <span>
+                            <strong>{t.code}</strong> — {t.description}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="ps-check-empty" style={{ marginTop: "0.35rem" }}>
+                      {selectedTxns.length === 0
+                        ? "None selected → ALL txn types allowed."
+                        : `${selectedTxns.length} selected.`}
+                    </p>
+                  </>
+                )}
+              </div>
 
               <label className="ps-field">
                 <span>CLOSURE</span>
@@ -1058,23 +1100,23 @@ function ProductFormModal({
               </label>
 
               {restrictionCodes.length > 0 ? (
-                <label className="ps-field ps-field--full">
+                <div className="ps-field ps-field--full">
                   <span>Default RESTRICTION codes (optional)</span>
-                  <select
-                    multiple
-                    size={Math.min(6, restrictionCodes.length)}
-                    value={selectedRestrictions}
-                    onChange={(e) =>
-                      setSelectedRestrictions(Array.from(e.target.selectedOptions).map((o) => o.value))
-                    }
-                  >
+                  <div className="ps-check-list" role="group" aria-label="Default restriction codes">
                     {restrictionCodes.map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.code} — {r.name}
-                      </option>
+                      <label key={r.code}>
+                        <input
+                          type="checkbox"
+                          checked={selectedRestrictions.includes(r.code)}
+                          onChange={() => toggleRestriction(r.code)}
+                        />
+                        <span>
+                          <strong>{r.code}</strong> — {r.name}
+                        </span>
+                      </label>
                     ))}
-                  </select>
-                </label>
+                  </div>
+                </div>
               ) : null}
 
               {properties.filter(
