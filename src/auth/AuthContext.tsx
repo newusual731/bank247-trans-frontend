@@ -29,6 +29,8 @@ type AuthState = {
   bankId: string | null;
   permissions: string[];
   roles: string[];
+  /** True once IAM effective-access has returned successfully at least once. */
+  accessLoaded: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (code: string) => boolean;
@@ -48,8 +50,7 @@ function snapshot() {
   };
 }
 
-function normalizeAccess(access: EffectiveAccess | null): EffectiveAccess | null {
-  if (!access) return null;
+function normalizeAccess(access: EffectiveAccess): EffectiveAccess {
   return {
     userId: access.userId,
     roleCodes: uniqueCodes(asStringList(access.roleCodes)),
@@ -60,7 +61,7 @@ function normalizeAccess(access: EffectiveAccess | null): EffectiveAccess | null
 
 /**
  * Prefer IAM effective access when present, but always union with JWT claims so
- * a lagging IdP sync or a sparse response cannot wipe Super Admin / direct grants.
+ * a lagging IdP sync cannot wipe Super Admin / direct grants.
  */
 function withGranted(base: ReturnType<typeof snapshot>, access: EffectiveAccess | null) {
   if (!access) return base;
@@ -74,10 +75,16 @@ function withGranted(base: ReturnType<typeof snapshot>, access: EffectiveAccess 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(() => !snapshot().authenticated);
   const [auth, setAuth] = useState(() => snapshot());
+  const [accessLoaded, setAccessLoaded] = useState(false);
   const grantedRef = useRef<EffectiveAccess | null>(null);
 
   const applySession = useCallback((access?: EffectiveAccess | null) => {
-    if (access !== undefined) grantedRef.current = normalizeAccess(access);
+    // Only update the IAM snapshot when a real response is provided.
+    // Never pass null here to "clear" on a failed refresh — that wiped Super Admin.
+    if (access) {
+      grantedRef.current = normalizeAccess(access);
+      setAccessLoaded(true);
+    }
     setAuth(withGranted(snapshot(), grantedRef.current));
   }, []);
 
@@ -86,13 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       applySession(await getMyEffectiveAccess());
     } catch {
-      applySession(null);
+      // Keep the last good IAM snapshot + current token claims.
+      applySession();
     }
   }, [applySession]);
 
   useEffect(() => {
     const onLost = () => {
       grantedRef.current = null;
+      setAccessLoaded(false);
       setAuth(snapshot());
     };
     window.addEventListener("bank247-auth-lost", onLost);
@@ -111,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         /* keep the token claims when IAM is unreachable */
+        if (!cancelled) applySession();
       })
       .finally(() => {
         if (!cancelled) setReady(true);
@@ -153,12 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     setReady(false);
+    setAccessLoaded(false);
+    grantedRef.current = null;
     try {
       await loginWithPassword(username.trim(), password);
       try {
         applySession(await getMyEffectiveAccess());
       } catch {
-        applySession(null);
+        applySession();
       }
     } finally {
       setReady(true);
@@ -168,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearAuth();
     grantedRef.current = null;
+    setAccessLoaded(false);
     setAuth(snapshot());
     setReady(true);
   }, []);
@@ -175,9 +188,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback(
     (code: string) => {
       if (isSuperAdminRole(auth.roles)) return true;
+      // Until IAM answers, do not lock the whole app behind empty claims.
+      if (!accessLoaded && auth.permissions.length === 0 && auth.roles.length === 0) {
+        return true;
+      }
       return hasAccessCode(auth.permissions, code);
     },
-    [auth.permissions, auth.roles],
+    [auth.permissions, auth.roles, accessLoaded],
   );
 
   const value = useMemo<AuthState>(
@@ -188,12 +205,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bankId: auth.bankId,
       permissions: auth.permissions,
       roles: auth.roles,
+      accessLoaded,
       login,
       logout,
       hasPermission,
       refreshAccess,
     }),
-    [ready, auth, login, logout, hasPermission, refreshAccess],
+    [ready, auth, accessLoaded, login, logout, hasPermission, refreshAccess],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -5,38 +5,24 @@ import { useProfileAvatar } from "../hooks/useProfileAvatar";
 import { useAuth } from "../auth/AuthContext";
 import "./AppShell.css";
 
-const NAV: ReadonlyArray<{
-  to: string;
-  label: string;
-  icon: string;
-  matchPrefix?: string;
-  /** Catalog permission to show this item; omit = any signed-in user. */
-  permission?: string;
-}> = [
+const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: "dash" },
-  { to: "/accounts", label: "Accounts", icon: "accounts", permission: "account.read" },
-  { to: "/transactions", label: "Transactions", icon: "tx", matchPrefix: "/transactions", permission: "transaction.read" },
-  { to: "/transactions/approvals", label: "Approvals", icon: "approve", permission: "workflow.approve" },
-  { to: "/gl", label: "General Ledger", icon: "gl", permission: "gl.read" },
-  {
-    to: "/contracts/balances",
-    label: "Contracts Products",
-    icon: "contracts",
-    matchPrefix: "/contracts",
-    permission: "loan.read",
-  },
-  { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report", permission: "report.read" },
-  { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller", permission: "teller.read" },
-  { to: "/settings/users", label: "Settings", icon: "settings", matchPrefix: "/settings", permission: "iam.user.read" },
-];
+  { to: "/accounts", label: "Accounts", icon: "accounts" },
+  { to: "/transactions", label: "Transactions", icon: "tx", matchPrefix: "/transactions" },
+  { to: "/transactions/approvals", label: "Approvals", icon: "approve" },
+  { to: "/gl", label: "General Ledger", icon: "gl" },
+  { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
+  { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
+  { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller" },
+  { to: "/settings/users", label: "Settings", icon: "settings", matchPrefix: "/settings" },
+] as const;
 
 export function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const [navOpen, setNavOpen] = useState(false);
   const { avatarUrl } = useProfileAvatar();
-  const { username, logout, hasPermission } = useAuth();
-  const navItems = NAV.filter((item) => !item.permission || hasPermission(item.permission));
+  const { username, logout } = useAuth();
 
   useEffect(() => {
     setNavOpen(false);
@@ -74,10 +60,10 @@ export function AppShell() {
           </button>
         </div>
         <nav className="shell-nav" aria-label="Main">
-          {navItems.map((item) => {
+          {NAV.map((item) => {
             const onApprovals = location.pathname.startsWith("/transactions/approvals");
             const prefixActive =
-              item.matchPrefix &&
+              "matchPrefix" in item &&
               location.pathname.startsWith(item.matchPrefix) &&
               !(item.matchPrefix === "/transactions" && onApprovals);
             return (
@@ -99,19 +85,17 @@ export function AppShell() {
         </nav>
 
         <div className="shell-sidebar-foot">
-          {hasPermission("notification.read") ? (
-            <NavLink
-              to="/notifications"
-              className={({ isActive }) =>
-                `shell-nav-item${isActive ? " is-active" : ""}`
-              }
-            >
-              <span className="shell-nav-icon" aria-hidden>
-                <NavIcon name="bell" />
-              </span>
-              <span>Notifications</span>
-            </NavLink>
-          ) : null}
+          <NavLink
+            to="/notifications"
+            className={({ isActive }) =>
+              `shell-nav-item${isActive ? " is-active" : ""}`
+            }
+          >
+            <span className="shell-nav-icon" aria-hidden>
+              <NavIcon name="bell" />
+            </span>
+            <span>Notifications</span>
+          </NavLink>
 
           <div className="shell-user">
             <button

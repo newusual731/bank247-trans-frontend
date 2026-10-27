@@ -3,7 +3,8 @@ import { useAuth } from "./AuthContext";
 import { permissionForPath } from "./permissions";
 
 export function RequirePermission({ children }: { children: React.ReactNode }) {
-  const { ready, username, hasPermission, logout, roles, permissions, refreshAccess } = useAuth();
+  const { ready, username, hasPermission, logout, roles, permissions, refreshAccess, accessLoaded } =
+    useAuth();
   const location = useLocation();
   const required = permissionForPath(location.pathname);
 
@@ -22,21 +23,22 @@ export function RequirePermission({ children }: { children: React.ReactNode }) {
         <p style={{ color: "#6b7280", lineHeight: 1.6 }}>
           {username || "Your account"} doesn&apos;t have{" "}
           <code style={{ fontSize: "0.9em" }}>{required}</code>. Ask an access administrator to grant
-          that catalog permission (or the SUPER_ADMIN role), then refresh.
+          that catalog permission (or assign the <code>SUPER_ADMIN</code> role), then refresh.
         </p>
         <p style={{ color: "#9ca3af", fontSize: "0.8rem", marginTop: "0.75rem" }}>
-          Roles loaded: {roles.length ? roles.join(", ") : "none"} · Permissions: {permissions.length}
+          IAM loaded: {accessLoaded ? "yes" : "no"} · Roles: {roles.length ? roles.join(", ") : "none"} ·
+          Permissions: {permissions.length}
         </p>
         <p style={{ marginTop: "1.25rem", display: "flex", gap: "1.25rem", justifyContent: "center", flexWrap: "wrap" }}>
           <button
             type="button"
             onClick={() => void refreshAccess()}
-            style={{ ...signOutStyle, textDecoration: "underline" }}
+            style={{ ...linkBtn, textDecoration: "underline" }}
           >
             Refresh access
           </button>
           <Link to="/dashboard">Go to your home page</Link>
-          <button type="button" onClick={logout} style={signOutStyle}>
+          <button type="button" onClick={logout} style={linkBtn}>
             Sign out
           </button>
         </p>
@@ -47,7 +49,7 @@ export function RequirePermission({ children }: { children: React.ReactNode }) {
   return children;
 }
 
-const signOutStyle = {
+const linkBtn = {
   background: "none",
   border: "none",
   padding: 0,
