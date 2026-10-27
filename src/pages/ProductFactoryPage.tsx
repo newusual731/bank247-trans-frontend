@@ -91,7 +91,7 @@ export function ProductFactoryPage() {
       else if (catalog === "txn-types") setTxnTypes(await listFactoryTxnTypes(statusArg));
       else setRestrictions(await listFactoryRestrictionCodes(statusArg));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to load Product Factory catalog");
+      setError(e instanceof ApiError ? e.message : "Couldn’t load catalog. Try again.");
     } finally {
       setBusy(false);
     }
@@ -155,10 +155,11 @@ export function ProductFactoryPage() {
 
   return (
     <div className="ps">
-      <h1>Product Factory</h1>
+      <h1>Product catalogs</h1>
       <p className="ps-hint">
-        Bank-editable catalogs (Product.Group, Properties, TXN.TYPE, RESTRICTION). Leaf products attach
-        these at <Link to="/settings/products">Product Setup</Link>.
+        Maintain product groups, properties, allowed transaction types, and restrictions used when you
+        set up products.{" "}
+        <Link to="/settings/products">Back to product setup</Link>
       </p>
       {error ? <p role="alert">{error}</p> : null}
 
@@ -705,7 +706,7 @@ function CatalogFormModal({
         <header className="ps-modal-head">
           <div>
             <h2 id="pf-form-title">{title}</h2>
-            <h3>Product Factory · {CATALOGS.find((c) => c.id === catalog)?.label}</h3>
+            <h3>{CATALOGS.find((c) => c.id === catalog)?.label}</h3>
           </div>
           <button type="button" className="ps-modal-close" onClick={onClose} aria-label="Close">
             ×

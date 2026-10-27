@@ -285,11 +285,11 @@ export function ProductSetupPage() {
 
   return (
     <div className="ps">
-      <h1>Product Setup</h1>
+      <h1>Product setup</h1>
       <p className="ps-hint">
-        Product Factory BRD — create leaf products (name, group, balance type, limits, GLs, TXN.TYPE).
-        Then Submit → Approve on Approvals → Activate. Maintain catalogs under{" "}
-        <Link to="/settings/product-factory">Product Factory</Link>.
+        Define savings, current, loan, and investment products. New products go for approval before they
+        can be used. Manage groups and transaction types under{" "}
+        <Link to="/settings/product-factory">Product catalogs</Link>.
       </p>
       {loadError ? <p role="alert">{loadError}</p> : null}
 
@@ -337,7 +337,7 @@ export function ProductSetupPage() {
         </button>
         <div className="ps-actions-right">
           <Link to="/settings/product-factory" className="ps-btn ps-btn--ghost" style={{ textDecoration: "none" }}>
-            Product Factory catalogs
+            Product catalogs
           </Link>
           <button type="button" className="ps-btn ps-btn--export" onClick={() => window.print()}>
             <ExportIcon /> Export
@@ -777,8 +777,10 @@ function ProductFormModal({
         {saveError ? <p role="alert">{saveError}</p> : null}
         <header className="ps-modal-head">
           <div>
-            <h2 id="product-form-title">Product Creation Interface</h2>
-            <h3>Product Factory BRD · {kind === "casa" ? "CASA" : kind.toUpperCase()}</h3>
+            <h2 id="product-form-title">New product</h2>
+            <h3>
+              {kind === "casa" ? "Deposit / current account" : kind === "loans" ? "Loan" : "Investment"}
+            </h3>
           </div>
           <button type="button" className="ps-modal-close" onClick={onClose} aria-label="Close">
             ×
@@ -867,7 +869,7 @@ function ProductFormModal({
                 />
               </label>
 
-              <p className="ps-section ps-field--full">PROPERTY.1 — CRINTEREST</p>
+              <p className="ps-section ps-field--full">Credit interest</p>
               <label className="ps-field">
                 <span>CRINTEREST.RATE %</span>
                 <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} />
@@ -1246,23 +1248,23 @@ function ProductFormModal({
                 <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
               </label>
               {txnTypes.length > 0 ? (
-                <label className="ps-field ps-field--full">
+                <div className="ps-field ps-field--full">
                   <span>Allowed TXN.TYPE</span>
-                  <select
-                    multiple
-                    size={Math.min(8, txnTypes.length)}
-                    value={selectedTxns}
-                    onChange={(e) =>
-                      setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
-                    }
-                  >
+                  <div className="ps-check-list" role="group" aria-label="Allowed TXN.TYPE">
                     {txnTypes.map((t) => (
-                      <option key={t.code} value={t.code}>
-                        {t.code} — {t.description}
-                      </option>
+                      <label key={t.code}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTxns.includes(t.code)}
+                          onChange={() => toggleTxn(t.code)}
+                        />
+                        <span>
+                          <strong>{t.code}</strong> — {t.description}
+                        </span>
+                      </label>
                     ))}
-                  </select>
-                </label>
+                  </div>
+                </div>
               ) : null}
               <p className="ps-section ps-field--full">Chart of Accounts</p>
               {kind === "loans" ? (

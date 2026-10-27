@@ -12,7 +12,7 @@ const NAV = [
   { to: "/transactions/approvals", label: "Approvals", icon: "approve" },
   { to: "/gl", label: "General Ledger", icon: "gl" },
   { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
-  { to: "/settings/products", label: "Product Setup", icon: "products", matchPrefix: "/settings/product" },
+  { to: "/settings/products", label: "Product setup", icon: "products", matchPrefix: "/settings/product" },
   { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
   { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller" },
   { to: "/settings/modules", label: "Settings", icon: "settings", matchPrefix: "/settings" },

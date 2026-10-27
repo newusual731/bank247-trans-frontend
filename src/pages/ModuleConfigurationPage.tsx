@@ -10,65 +10,41 @@ export function ModuleConfigurationPage() {
 
   return (
     <div className="mcfg">
-      <h1>Module Configuration</h1>
-      <p className="mcfg-sub">Configure module limits and operational controls for your bank staff.</p>
+      <h1>Settings</h1>
+      <p className="mcfg-sub">Limits, products, and other bank configuration.</p>
 
       <div className="mcfg-cards">
         <button type="button" className="mcfg-card" onClick={() => setAmendOpen(true)}>
-          <span className="mcfg-card-icon is-limit" aria-hidden>
-            &gt;_
+          <span className="mcfg-card-icon" aria-hidden>
+            <IconLimits />
           </span>
           <div>
-            <strong>Amend User Limit</strong>
-            <em>Set LCY / FCY debit and credit limits by user and branch</em>
+            <strong>User limits</strong>
+            <em>Debit and credit limits by user and branch</em>
           </div>
           <span className="mcfg-chev" aria-hidden>
             ›
           </span>
         </button>
-        <Link to="/reporting" className="mcfg-card">
-          <span className="mcfg-card-icon is-report" aria-hidden>
-            ◉
-          </span>
-          <div>
-            <strong>REPORTING</strong>
-            <em>Open the reporting hub</em>
-          </div>
-          <span className="mcfg-chev" aria-hidden>
-            ›
-          </span>
-        </Link>
         <Link to="/settings/products" className="mcfg-card">
-          <span className="mcfg-card-icon is-limit" aria-hidden>
-            ▣
+          <span className="mcfg-card-icon" aria-hidden>
+            <IconProducts />
           </span>
           <div>
-            <strong>Product Setup</strong>
-            <em>Create and manage leaf products (Product Factory BRD)</em>
+            <strong>Product setup</strong>
+            <em>Create and maintain account products</em>
           </div>
           <span className="mcfg-chev" aria-hidden>
             ›
           </span>
         </Link>
         <Link to="/settings/product-factory" className="mcfg-card">
-          <span className="mcfg-card-icon is-limit" aria-hidden>
-            ▦
+          <span className="mcfg-card-icon" aria-hidden>
+            <IconFactory />
           </span>
           <div>
-            <strong>Product Factory</strong>
-            <em>Product.Group, Properties, TXN.TYPE, and RESTRICTION catalogs</em>
-          </div>
-          <span className="mcfg-chev" aria-hidden>
-            ›
-          </span>
-        </Link>
-        <Link to="/settings/catalogs" className="mcfg-card">
-          <span className="mcfg-card-icon is-limit" aria-hidden>
-            ▾
-          </span>
-          <div>
-            <strong>Catalogs &amp; Dropdowns</strong>
-            <em>Figma root PNG option lists (design QA)</em>
+            <strong>Product catalogs</strong>
+            <em>Groups, properties, transaction types, and restrictions</em>
           </div>
           <span className="mcfg-chev" aria-hidden>
             ›
@@ -78,6 +54,48 @@ export function ModuleConfigurationPage() {
 
       {amendOpen ? <AmendUserLimitModal onClose={() => setAmendOpen(false)} /> : null}
     </div>
+  );
+}
+
+function IconLimits() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 19V5M4 19h16M8 15V9M12 15V7M16 15v-4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconProducts() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7.5L12 3l8 4.5v9L12 21l-8-4.5v-9z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M12 12v9M12 12L4 7.5M12 12l8-4.5" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
+function IconFactory() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 3v2.2M12 18.8V21M4.9 6.5l1.6 1.5M17.5 16l1.6 1.5M3 12h2.2M18.8 12H21M4.9 17.5l1.6-1.5M17.5 8l1.6-1.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -132,8 +150,8 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
   if (done) {
     return (
       <GenerationSuccessModal
-        title="Successfull"
-        message="Account parameter setup successfully"
+        title="Limits updated"
+        message="User limits have been saved."
         onClose={() => {
           setDone(false);
           onClose();
@@ -148,7 +166,7 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
         <button type="button" className="mcfg-x" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <h2>Amend User Limit</h2>
+        <h2>Amend user limit</h2>
         <label>
           <span>User ID</span>
           <input placeholder="Enter User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
@@ -189,7 +207,11 @@ function AmendUserLimitModal({ onClose }: { onClose: () => void }) {
           <span>User Branch Code</span>
           <input
             placeholder="Enter Branch Code"
-            value={branch} onChange={(e) => { setBranch(e.target.value); void loadParams(e.target.value); }}
+            value={branch}
+            onChange={(e) => {
+              setBranch(e.target.value);
+              void loadParams(e.target.value);
+            }}
           />
         </label>
         {saveError ? <p className="mcfg-error">{saveError}</p> : null}
