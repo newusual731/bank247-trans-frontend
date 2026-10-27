@@ -20,6 +20,7 @@ import {
   stopSessionWatch,
   watchSession,
 } from "../lib/authSession";
+import { asStringList, hasAccessCode, isSuperAdminRole, uniqueCodes } from "./access";
 
 type AuthState = {
   ready: boolean;
@@ -31,6 +32,7 @@ type AuthState = {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   hasPermission: (code: string) => boolean;
+  refreshAccess: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -46,12 +48,26 @@ function snapshot() {
   };
 }
 
+function normalizeAccess(access: EffectiveAccess | null): EffectiveAccess | null {
+  if (!access) return null;
+  return {
+    userId: access.userId,
+    roleCodes: uniqueCodes(asStringList(access.roleCodes)),
+    permissionCodes: uniqueCodes(asStringList(access.permissionCodes)),
+    branchScopes: uniqueCodes(asStringList(access.branchScopes)),
+  };
+}
+
+/**
+ * Prefer IAM effective access when present, but always union with JWT claims so
+ * a lagging IdP sync or a sparse response cannot wipe Super Admin / direct grants.
+ */
 function withGranted(base: ReturnType<typeof snapshot>, access: EffectiveAccess | null) {
   if (!access) return base;
   return {
     ...base,
-    permissions: access.permissionCodes ?? [],
-    roles: access.roleCodes ?? [],
+    permissions: uniqueCodes([...(access.permissionCodes ?? []), ...base.permissions]),
+    roles: uniqueCodes([...(access.roleCodes ?? []), ...base.roles]),
   };
 }
 
@@ -61,9 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const grantedRef = useRef<EffectiveAccess | null>(null);
 
   const applySession = useCallback((access?: EffectiveAccess | null) => {
-    if (access !== undefined) grantedRef.current = access;
+    if (access !== undefined) grantedRef.current = normalizeAccess(access);
     setAuth(withGranted(snapshot(), grantedRef.current));
   }, []);
+
+  const refreshAccess = useCallback(async () => {
+    if (!isAuthenticated()) return;
+    try {
+      applySession(await getMyEffectiveAccess());
+    } catch {
+      applySession(null);
+    }
+  }, [applySession]);
 
   useEffect(() => {
     const onLost = () => {
@@ -96,16 +121,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth.authenticated, applySession]);
 
   useEffect(() => {
+    if (!auth.authenticated) return;
+    const onFocus = () => {
+      void refreshAccess();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [auth.authenticated, refreshAccess]);
+
+  useEffect(() => {
     if (!auth.authenticated) {
       stopSessionWatch();
       return;
     }
     watchSession(
       async () => Boolean(await refreshAccessToken()),
-      () => applySession(),
+      () => {
+        applySession();
+        void refreshAccess();
+      },
     );
     return () => stopSessionWatch();
-  }, [auth.authenticated, applySession]);
+  }, [auth.authenticated, applySession, refreshAccess]);
 
   const login = useCallback(async (username: string, password: string) => {
     setReady(false);
@@ -130,11 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = useCallback(
     (code: string) => {
-      if (auth.roles.some((role) => role.replace(/^SCOPE_/, "").toUpperCase() === "SUPER_ADMIN")) return true;
-      if (auth.permissions.includes(code)) return true;
-      if (auth.permissions.includes(`SCOPE_${code}`)) return true;
-      const bare = code.replace(/^SCOPE_/, "");
-      return auth.permissions.includes(bare);
+      if (isSuperAdminRole(auth.roles)) return true;
+      return hasAccessCode(auth.permissions, code);
     },
     [auth.permissions, auth.roles],
   );
@@ -150,8 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       hasPermission,
+      refreshAccess,
     }),
-    [ready, auth, login, logout, hasPermission],
+    [ready, auth, login, logout, hasPermission, refreshAccess],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,3 +1,5 @@
+import { asStringList, uniqueCodes } from "../auth/access";
+
 const ACCESS_KEY = "bank247.accessToken";
 const REFRESH_KEY = "bank247.refreshToken";
 const EXPIRES_KEY = "bank247.tokenExpiresAt";
@@ -140,11 +142,9 @@ export function getPermissionsFromToken(token: string | null = getAccessToken())
   if (!token) return [];
   const payload = decodeJwtPayload(token);
   if (!payload) return [];
-  const claim = payload.bank247_permissions;
-  if (Array.isArray(claim)) return claim.map(String);
-  if (typeof claim === "string") return claim.split(/\s+/).filter(Boolean);
-  const scope = payload.scope;
-  if (typeof scope === "string") return scope.split(/\s+/).filter(Boolean);
+  const fromClaim = asStringList(payload.bank247_permissions);
+  if (fromClaim.length) return uniqueCodes(fromClaim);
+  // Do not fall back to OAuth `scope` (openid/profile) — those are not IAM catalog codes.
   return [];
 }
 
@@ -152,10 +152,12 @@ export function getRolesFromToken(token: string | null = getAccessToken()): stri
   if (!token) return [];
   const payload = decodeJwtPayload(token);
   if (!payload) return [];
-  const claim = payload.bank247_roles;
-  if (Array.isArray(claim)) return claim.map(String);
-  if (typeof claim === "string") return claim.split(/\s+/).filter(Boolean);
-  return [];
+  const bankRoles = asStringList(payload.bank247_roles);
+  const realm =
+    payload.realm_access && typeof payload.realm_access === "object"
+      ? asStringList((payload.realm_access as { roles?: unknown }).roles)
+      : [];
+  return uniqueCodes([...bankRoles, ...realm]);
 }
 
 export function getBankIdFromToken(token: string | null = getAccessToken()): string | null {
