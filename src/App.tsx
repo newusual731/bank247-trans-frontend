@@ -25,6 +25,7 @@ import { NotificationsPage } from "./pages/NotificationsPage";
 import { PlacementContractsPage } from "./pages/PlacementContractsPage";
 import { PnlEntryPage } from "./pages/PnlEntryPage";
 import { PnlReportPage } from "./pages/PnlReportPage";
+import { ProductFactoryPage } from "./pages/ProductFactoryPage";
 import { ProductSetupPage } from "./pages/ProductSetupPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ReportingHubPage } from "./pages/ReportingHubPage";
@@ -123,6 +124,7 @@ export default function App() {
           <Route path="/settings/users" element={<UserManagementPage />} />
           <Route path="/settings/roles" element={<RoleManagementPage />} />
           <Route path="/settings/products" element={<ProductSetupPage />} />
+          <Route path="/settings/product-factory" element={<ProductFactoryPage />} />
           <Route path="/settings/modules" element={<ModuleConfigurationPage />} />
           <Route path="/settings/catalogs" element={<CatalogGalleryPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />

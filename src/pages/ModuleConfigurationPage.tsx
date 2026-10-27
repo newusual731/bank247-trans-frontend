@@ -38,6 +38,18 @@ export function ModuleConfigurationPage() {
             ›
           </span>
         </Link>
+        <Link to="/settings/product-factory" className="mcfg-card">
+          <span className="mcfg-card-icon is-limit" aria-hidden>
+            ▣
+          </span>
+          <div>
+            <strong>Product Factory</strong>
+            <em>Groups, properties, TXN.TYPE, and restriction catalogs</em>
+          </div>
+          <span className="mcfg-chev" aria-hidden>
+            ›
+          </span>
+        </Link>
         <Link to="/settings/catalogs" className="mcfg-card">
           <span className="mcfg-card-icon is-limit" aria-hidden>
             ▾

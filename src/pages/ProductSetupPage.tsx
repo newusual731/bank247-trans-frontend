@@ -21,7 +21,18 @@ import {
   submitLoanProduct,
   type ProductKind,
 } from "../api/accounts";
+import {
+  listFactoryRestrictionCodes,
+  listFactoryTxnTypes,
+  listProductGroups,
+  replaceProductAllowedTxnTypes,
+  replaceProductRestrictionDefaults,
+  type FactoryRestrictionCode,
+  type FactoryTxnType,
+  type ProductGroup,
+} from "../api/productFactory";
 import { ApiError } from "../lib/apiClient";
+import { Link } from "react-router-dom";
 
 type ProductRow = {
   kind: ProductKind;
@@ -272,8 +283,9 @@ export function ProductSetupPage() {
     <div className="ps">
       <h1>Product Setup</h1>
       <p className="ps-hint">
-        Create → Submit for approval → Approve on Approvals → Activate. Map product GLs on GL Mapping
-        after charts exist.
+        Create → Submit for approval → Approve on Approvals → Activate. Catalogs (Group / Properties /
+        TXN.TYPE / RESTRICTION) live under{" "}
+        <Link to="/settings/product-factory">Product Factory</Link>.
       </p>
       {loadError ? <p role="alert">{loadError}</p> : null}
 
@@ -409,9 +421,12 @@ function ProductFormModal({
   const [code, setCode] = useState("");
   const [productName, setProductName] = useState("");
   const [currency, setCurrency] = useState("NGN");
-  const [term, setTerm] = useState(PRODUCT_TERMS[1]);
+  const [term, setTerm] = useState<string>(PRODUCT_TERMS[1]);
   const [interestRate, setInterestRate] = useState("6.5");
   const [description, setDescription] = useState("");
+  const [productGroup, setProductGroup] = useState("");
+  const [selectedTxns, setSelectedTxns] = useState<string[]>([]);
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
 
   // CASA GLs
   const [reportingGl, setReportingGl] = useState("");
@@ -437,10 +452,40 @@ function ProductFormModal({
   const [invWhtGl, setInvWhtGl] = useState("");
   const [penaltyGl, setPenaltyGl] = useState("");
 
+  const [groups, setGroups] = useState<ProductGroup[]>([]);
+  const [txnTypes, setTxnTypes] = useState<FactoryTxnType[]>([]);
+  const [restrictionCodes, setRestrictionCodes] = useState<FactoryRestrictionCode[]>([]);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const kind = resolveKind(productType);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [g, t, r] = await Promise.all([
+          listProductGroups("ACTIVE"),
+          listFactoryTxnTypes("ACTIVE"),
+          listFactoryRestrictionCodes("ACTIVE"),
+        ]);
+        if (cancelled) return;
+        setGroups(g);
+        setTxnTypes(t);
+        setRestrictionCodes(r);
+        if (!productGroup && g.length) {
+          const savings = g.find((x) => x.code.includes("SAVINGS"));
+          setProductGroup((savings ?? g[0]).code);
+        }
+      } catch {
+        /* keep form usable offline/demo */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load catalogs once on open
+  }, []);
 
   async function saveProduct() {
     setBusy(true);
@@ -526,17 +571,18 @@ function ProductFormModal({
         : productType.toLowerCase().includes("fixed")
           ? "FIXED_DEPOSIT"
           : "SAVINGS";
-      const productGroup =
-        accountType === "CURRENT"
+      const groupCode =
+        productGroup ||
+        (accountType === "CURRENT"
           ? "CURRENT.ACCOUNTS-GROUP"
           : accountType === "FIXED_DEPOSIT"
             ? "FIXED.DEPOSIT-GROUP"
-            : "SAVINGS.ACCOUNTS-GROUP";
+            : "SAVINGS.ACCOUNTS-GROUP");
       const p = await createCasaProduct({
         code: productCode,
         name,
         accountType,
-        productGroup,
+        productGroup: groupCode,
         balanceType: "CREDIT",
         currency: ccy,
         minimumBalance: Number(minBalance) || 0,
@@ -552,6 +598,18 @@ function ProductFormModal({
         cashLiteCharge: 0,
         dormancyInactiveDays: 180,
       });
+      if (selectedTxns.length) {
+        await replaceProductAllowedTxnTypes(productCode, selectedTxns);
+      }
+      if (selectedRestrictions.length) {
+        await replaceProductRestrictionDefaults(
+          productCode,
+          selectedRestrictions.map((restrictionCode) => ({
+            restrictionCode,
+            autoApplyOnOpen: restrictionCode === "ONBOARDING",
+          })),
+        );
+      }
       onSaved(mapCasa(p as unknown as Record<string, unknown>));
     } catch (e) {
       setSaveError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Save failed");
@@ -617,6 +675,22 @@ function ProductFormModal({
               <ChevronDown />
             </div>
           </label>
+          {kind === "casa" ? (
+            <label className="ps-field">
+              <span>Product group</span>
+              <div className="ps-select">
+                <select value={productGroup} onChange={(e) => setProductGroup(e.target.value)} required>
+                  {groups.length === 0 ? <option value="">Loading groups…</option> : null}
+                  {groups.map((g) => (
+                    <option key={g.code} value={g.code}>
+                      {g.name} ({g.code})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown />
+              </div>
+            </label>
+          ) : null}
           {kind !== "casa" ? (
             <label className="ps-field">
               <span>Term</span>
@@ -660,6 +734,46 @@ function ProductFormModal({
             <span>Description / notes</span>
             <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
+
+          {kind === "casa" && txnTypes.length > 0 ? (
+            <label className="ps-field ps-field--full">
+              <span>Allowed TXN.TYPE (optional — empty = all)</span>
+              <select
+                multiple
+                size={Math.min(8, txnTypes.length)}
+                value={selectedTxns}
+                onChange={(e) =>
+                  setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
+                }
+              >
+                {txnTypes.map((t) => (
+                  <option key={t.code} value={t.code}>
+                    {t.code} — {t.description}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          {kind === "casa" && restrictionCodes.length > 0 ? (
+            <label className="ps-field ps-field--full">
+              <span>Default RESTRICTION codes (optional)</span>
+              <select
+                multiple
+                size={Math.min(6, restrictionCodes.length)}
+                value={selectedRestrictions}
+                onChange={(e) =>
+                  setSelectedRestrictions(Array.from(e.target.selectedOptions).map((o) => o.value))
+                }
+              >
+                {restrictionCodes.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.code} — {r.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           <p className="ps-section ps-field--full">Chart of Accounts (Product Factory GLs)</p>
 
