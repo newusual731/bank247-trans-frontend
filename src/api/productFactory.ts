@@ -1,4 +1,21 @@
-import { apiRequest } from "../lib/apiClient";
+import { ApiError, apiRequest } from "../lib/apiClient";
+
+/** User-facing message when a Product Factory catalog call fails. */
+export function catalogLoadMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return "Sign in again to load product catalogs.";
+    if (error.status === 403) return "You don’t have permission to view product catalogs.";
+    if (error.status === 404) {
+      return "Product catalog API not found. Account service may need a redeploy.";
+    }
+    if (error.status === 502 || error.status === 503) {
+      return "Product service is temporarily unavailable. Try again shortly.";
+    }
+    return error.message || `Couldn’t load catalog (${error.status}).`;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return "Couldn’t load catalog. Try again.";
+}
 
 export type FactoryCatalogStatus = "ACTIVE" | "INACTIVE" | "EXPIRED";
 

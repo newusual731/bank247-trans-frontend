@@ -4,6 +4,7 @@ import {
   createFactoryRestrictionCode,
   createFactoryTxnType,
   createProductGroup,
+  catalogLoadMessage,
   createProductProperty,
   listFactoryRestrictionCodes,
   listFactoryTxnTypes,
@@ -91,7 +92,7 @@ export function ProductFactoryPage() {
       else if (catalog === "txn-types") setTxnTypes(await listFactoryTxnTypes(statusArg));
       else setRestrictions(await listFactoryRestrictionCodes(statusArg));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Couldn’t load catalog. Try again.");
+      setError(catalogLoadMessage(e));
     } finally {
       setBusy(false);
     }

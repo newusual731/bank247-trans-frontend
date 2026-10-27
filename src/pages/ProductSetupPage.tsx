@@ -22,6 +22,7 @@ import {
   type ProductKind,
 } from "../api/accounts";
 import {
+  catalogLoadMessage,
   getProductFactoryConfig,
   listFactoryRestrictionCodes,
   listFactoryTxnTypes,
@@ -178,19 +179,28 @@ function mapInvestment(p: Record<string, unknown>): ProductRow {
   };
 }
 
-function resolveKind(productType: string): ProductKind {
+function resolveKind(productType: string, groupCode?: string): ProductKind {
+  if (groupCode) return "casa";
   const t = productType.toLowerCase();
   if (t.includes("loan")) return "loans";
   if (
-    t.includes("deposit") ||
     t.includes("treasury") ||
     t.includes("bond") ||
     t.includes("bill") ||
-    t.includes("call")
+    t.includes("call") ||
+    t.includes("placement")
   ) {
     return "investments";
   }
   return "casa";
+}
+
+function accountTypeFromGroup(groupCode: string, productType: string): string {
+  const g = groupCode.toUpperCase();
+  const t = productType.toLowerCase();
+  if (g.includes("CURRENT") || t.includes("current")) return "CURRENT";
+  if (g.includes("FIXED") || t.includes("fixed")) return "FIXED_DEPOSIT";
+  return "SAVINGS";
 }
 
 function parseTermDays(term: string): { min: number; max: number } {
@@ -504,7 +514,7 @@ function ProductFormModal({
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const kind = resolveKind(productType);
+  const kind = resolveKind(productType, productGroup || undefined);
   const selectedGroup = groups.find((g) => g.code === productGroup);
 
   useEffect(() => {
@@ -517,40 +527,46 @@ function ProductFormModal({
     (async () => {
       setCatalogLoading(true);
       setCatalogError(null);
-      try {
-        const [g, t, r, props, gls] = await Promise.all([
-          listProductGroups("ACTIVE"),
-          listFactoryTxnTypes("ACTIVE"),
-          listFactoryRestrictionCodes("ACTIVE"),
-          listProductProperties("ACTIVE"),
-          listGlAccounts({ status: "ACTIVE", size: 200 }),
-        ]);
-        if (cancelled) return;
-        setGroups(Array.isArray(g) ? g : []);
-        setTxnTypes(Array.isArray(t) ? t : []);
-        setRestrictionCodes(Array.isArray(r) ? r : []);
-        setProperties(Array.isArray(props) ? props : []);
-        setGlAccounts((gls.content ?? []).filter((x) => x.postable !== false));
-        if (!productGroup && g.length) {
-          const savings = g.find((x) => x.code.includes("SAVINGS"));
-          setProductGroup((savings ?? g[0]).code);
+      const results = await Promise.allSettled([
+        listProductGroups("ACTIVE"),
+        listFactoryTxnTypes("ACTIVE"),
+        listFactoryRestrictionCodes("ACTIVE"),
+        listProductProperties("ACTIVE"),
+        listGlAccounts({ status: "ACTIVE", size: 200 }),
+      ]);
+      if (cancelled) return;
+
+      const [gRes, tRes, rRes, pRes, glRes] = results;
+      if (gRes.status === "fulfilled" && Array.isArray(gRes.value)) {
+        setGroups(gRes.value);
+        if (!productGroup && gRes.value.length) {
+          const savings = gRes.value.find((x) => x.code.includes("SAVINGS"));
+          const first = savings ?? gRes.value[0];
+          setProductGroup(first.code);
+          setProductType(first.name);
         }
+      }
+      if (tRes.status === "fulfilled" && Array.isArray(tRes.value)) setTxnTypes(tRes.value);
+      if (rRes.status === "fulfilled" && Array.isArray(rRes.value)) setRestrictionCodes(rRes.value);
+      if (pRes.status === "fulfilled" && Array.isArray(pRes.value)) {
+        setProperties(pRes.value);
         setPropertyValues((prev) => {
           const next = { ...prev };
-          for (const p of props) {
+          for (const p of pRes.value) {
             if (next[p.code] == null) next[p.code] = "";
           }
           return next;
         });
-      } catch (e) {
-        if (!cancelled) {
-          setCatalogError(
-            e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to load catalogs",
-          );
-        }
-      } finally {
-        if (!cancelled) setCatalogLoading(false);
       }
+      if (glRes.status === "fulfilled") {
+        setGlAccounts((glRes.value.content ?? []).filter((x) => x.postable !== false));
+      }
+
+      const factoryFail = [gRes, tRes, rRes, pRes].find((r) => r.status === "rejected");
+      if (factoryFail && factoryFail.status === "rejected") {
+        setCatalogError(catalogLoadMessage(factoryFail.reason));
+      }
+      setCatalogLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -721,18 +737,14 @@ function ProductFormModal({
         return;
       }
 
-      const accountType = productType.toLowerCase().includes("current")
-        ? "CURRENT"
-        : productType.toLowerCase().includes("fixed")
-          ? "FIXED_DEPOSIT"
-          : "SAVINGS";
       const groupCode =
         productGroup ||
-        (accountType === "CURRENT"
+        (productType.toLowerCase().includes("current")
           ? "CURRENT.ACCOUNTS-GROUP"
-          : accountType === "FIXED_DEPOSIT"
+          : productType.toLowerCase().includes("fixed")
             ? "FIXED.DEPOSIT-GROUP"
             : "SAVINGS.ACCOUNTS-GROUP");
+      const accountType = accountTypeFromGroup(groupCode, productType);
       const basisDays = interestBasis.includes("360") ? 360 : interestBasis.includes("366") ? 366 : 365;
       const p = await createCasaProduct({
         code: productCode,
@@ -763,7 +775,28 @@ function ProductFormModal({
     }
   }
 
-  const createTypes = PRODUCT_SETUP_TYPES.filter((t) => t !== "All");
+  const OTHER_TYPES = ["Loan", "Treasury Bill", "Bond", "Call Deposit"] as const;
+
+  function onAccountTypeChange(value: string) {
+    if (value.startsWith("group:")) {
+      const groupCode = value.slice("group:".length);
+      const g = groups.find((x) => x.code === groupCode);
+      setProductGroup(groupCode);
+      setProductType(g?.name || groupCode);
+      return;
+    }
+    setProductGroup("");
+    setProductType(value);
+  }
+
+  const accountTypeValue =
+    kind === "casa" && productGroup
+      ? `group:${productGroup}`
+      : OTHER_TYPES.includes(productType as (typeof OTHER_TYPES)[number])
+        ? productType
+        : productGroup
+          ? `group:${productGroup}`
+          : productType;
 
   return (
     <div className="ps-modal-backdrop" role="presentation" onClick={onClose}>
@@ -791,9 +824,26 @@ function ProductFormModal({
           <label className="ps-field">
             <span>Account / product type</span>
             <div className="ps-select">
-              <select value={productType} onChange={(e) => setProductType(e.target.value)}>
-                {createTypes.map((o) => (
-                  <option key={o}>{o}</option>
+              <select
+                value={accountTypeValue}
+                onChange={(e) => onAccountTypeChange(e.target.value)}
+                required
+              >
+                {catalogLoading ? <option value="">Loading…</option> : null}
+                {!catalogLoading && groups.length === 0 ? (
+                  <option value="" disabled>
+                    No product groups loaded
+                  </option>
+                ) : null}
+                {groups.map((g) => (
+                  <option key={g.code} value={`group:${g.code}`}>
+                    {g.name}
+                  </option>
+                ))}
+                {OTHER_TYPES.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
                 ))}
               </select>
               <ChevronDown />
@@ -832,18 +882,8 @@ function ProductFormModal({
           {kind === "casa" ? (
             <>
               <label className="ps-field">
-                <span>Product_group</span>
-                <div className="ps-select">
-                  <select value={productGroup} onChange={(e) => setProductGroup(e.target.value)} required>
-                    {groups.length === 0 ? <option value="">Loading groups…</option> : null}
-                    {groups.map((g) => (
-                      <option key={g.code} value={g.code}>
-                        {g.name} ({g.code})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown />
-                </div>
+                <span>Product group code</span>
+                <input value={productGroup} readOnly />
               </label>
               <label className="ps-field">
                 <span>BALANCE_TYPE</span>
