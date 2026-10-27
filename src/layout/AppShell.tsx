@@ -14,7 +14,7 @@ const NAV = [
   { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
   { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
   { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller" },
-  { to: "/settings/users", label: "Settings", icon: "settings", matchPrefix: "/settings" },
+  { to: "/settings/modules", label: "Settings", icon: "settings", matchPrefix: "/settings" },
 ] as const;
 
 export function AppShell() {

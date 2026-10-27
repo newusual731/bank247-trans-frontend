@@ -59,9 +59,17 @@ export type ProductFactoryConfig = {
 
 const BASE = "/api/v1/products/factory";
 
-export function listProductGroups(status: FactoryCatalogStatus = "ACTIVE") {
-  const q = new URLSearchParams({ status });
-  return apiRequest<ProductGroup[]>(`${BASE}/groups?${q}`);
+function statusQuery(status?: FactoryCatalogStatus) {
+  if (!status) return "";
+  return `?${new URLSearchParams({ status })}`;
+}
+
+export function listProductGroups(status?: FactoryCatalogStatus) {
+  return apiRequest<ProductGroup[]>(`${BASE}/groups${statusQuery(status)}`);
+}
+
+export function getProductGroup(code: string) {
+  return apiRequest<ProductGroup>(`${BASE}/groups/${encodeURIComponent(code)}`);
 }
 
 export function createProductGroup(body: {
@@ -94,9 +102,12 @@ export function updateProductGroup(
   });
 }
 
-export function listProductProperties(status: FactoryCatalogStatus = "ACTIVE") {
-  const q = new URLSearchParams({ status });
-  return apiRequest<ProductPropertyDefinition[]>(`${BASE}/properties?${q}`);
+export function listProductProperties(status?: FactoryCatalogStatus) {
+  return apiRequest<ProductPropertyDefinition[]>(`${BASE}/properties${statusQuery(status)}`);
+}
+
+export function getProductProperty(code: string) {
+  return apiRequest<ProductPropertyDefinition>(`${BASE}/properties/${encodeURIComponent(code)}`);
 }
 
 export function createProductProperty(body: {
@@ -125,9 +136,12 @@ export function updateProductProperty(
   });
 }
 
-export function listFactoryTxnTypes(status: FactoryCatalogStatus = "ACTIVE") {
-  const q = new URLSearchParams({ status });
-  return apiRequest<FactoryTxnType[]>(`${BASE}/txn-types?${q}`);
+export function listFactoryTxnTypes(status?: FactoryCatalogStatus) {
+  return apiRequest<FactoryTxnType[]>(`${BASE}/txn-types${statusQuery(status)}`);
+}
+
+export function getFactoryTxnType(code: string) {
+  return apiRequest<FactoryTxnType>(`${BASE}/txn-types/${encodeURIComponent(code)}`);
 }
 
 export function createFactoryTxnType(body: { code: string; description: string }) {
@@ -144,9 +158,12 @@ export function updateFactoryTxnType(
   });
 }
 
-export function listFactoryRestrictionCodes(status: FactoryCatalogStatus = "ACTIVE") {
-  const q = new URLSearchParams({ status });
-  return apiRequest<FactoryRestrictionCode[]>(`${BASE}/restriction-codes?${q}`);
+export function listFactoryRestrictionCodes(status?: FactoryCatalogStatus) {
+  return apiRequest<FactoryRestrictionCode[]>(`${BASE}/restriction-codes${statusQuery(status)}`);
+}
+
+export function getFactoryRestrictionCode(code: string) {
+  return apiRequest<FactoryRestrictionCode>(`${BASE}/restriction-codes/${encodeURIComponent(code)}`);
 }
 
 export function createFactoryRestrictionCode(body: {
@@ -181,10 +198,22 @@ export function getProductFactoryConfig(productCode: string) {
   );
 }
 
+export function listProductAllowedTxnTypes(productCode: string) {
+  return apiRequest<FactoryTxnType[]>(
+    `${BASE}/products/${encodeURIComponent(productCode)}/allowed-txn-types`,
+  );
+}
+
 export function replaceProductAllowedTxnTypes(productCode: string, txnTypeCodes: string[]) {
   return apiRequest<FactoryTxnType[]>(
     `${BASE}/products/${encodeURIComponent(productCode)}/allowed-txn-types`,
     { method: "PUT", body: { txnTypeCodes } },
+  );
+}
+
+export function listProductRestrictionDefaults(productCode: string) {
+  return apiRequest<{ restrictionCode: string; restrictionName: string; autoApplyOnOpen: boolean }[]>(
+    `${BASE}/products/${encodeURIComponent(productCode)}/restriction-defaults`,
   );
 }
 
@@ -195,6 +224,12 @@ export function replaceProductRestrictionDefaults(
   return apiRequest(
     `${BASE}/products/${encodeURIComponent(productCode)}/restriction-defaults`,
     { method: "PUT", body: { items } },
+  );
+}
+
+export function listProductPropertyValues(productCode: string) {
+  return apiRequest<ProductFactoryConfig["propertyValues"]>(
+    `${BASE}/products/${encodeURIComponent(productCode)}/property-values`,
   );
 }
 

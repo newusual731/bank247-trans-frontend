@@ -22,15 +22,21 @@ import {
   type ProductKind,
 } from "../api/accounts";
 import {
+  getProductFactoryConfig,
   listFactoryRestrictionCodes,
   listFactoryTxnTypes,
   listProductGroups,
+  listProductProperties,
   replaceProductAllowedTxnTypes,
+  replaceProductPropertyValues,
   replaceProductRestrictionDefaults,
   type FactoryRestrictionCode,
   type FactoryTxnType,
+  type ProductFactoryConfig,
   type ProductGroup,
+  type ProductPropertyDefinition,
 } from "../api/productFactory";
+import { listGlAccounts, type GlAccountSummary } from "../api/ledger";
 import { ApiError } from "../lib/apiClient";
 import { Link } from "react-router-dom";
 
@@ -256,28 +262,26 @@ export function ProductSetupPage() {
   }, [refreshKey]);
 
   const displayRows = useMemo(() => {
-    let source = apiRows && apiRows.length > 0 ? apiRows : DEMO_ROWS;
+    let source = apiRows ?? (loadError ? DEMO_ROWS : []);
     if (status && status !== "All") {
       source = source.filter((r) => r.status.toUpperCase() === status.toUpperCase());
     }
     if (productType && productType !== "All") {
       const needle = productType.toLowerCase();
-      const filtered = source.filter(
+      source = source.filter(
         (r) =>
           r.productType.toLowerCase().includes(needle) ||
           needle.includes(r.productType.toLowerCase()) ||
           (needle.includes("savings") && r.kind === "casa") ||
           (needle.includes("current") && r.kind === "casa"),
       );
-      if (filtered.length || apiRows) source = filtered;
     }
     const ccy = normalizeCurrency(currency);
     if (ccy.length === 3 && currency && currency !== "All") {
-      const filtered = source.filter((r) => normalizeCurrency(r.currency) === ccy);
-      if (filtered.length || apiRows) source = filtered;
+      source = source.filter((r) => normalizeCurrency(r.currency) === ccy);
     }
     return source;
-  }, [apiRows, productType, status, currency]);
+  }, [apiRows, productType, status, currency, loadError]);
 
   return (
     <div className="ps">
@@ -359,29 +363,43 @@ export function ProductSetupPage() {
             </tr>
           </thead>
           <tbody>
-            {displayRows.map((row) => (
-              <tr key={`${row.kind}-${row.code}-${row.productName}`}>
-                <td>{row.code || "—"}</td>
-                <td>{row.productType}</td>
-                <td>{row.productName}</td>
-                <td>{row.term}</td>
-                <td>{row.interestRate}</td>
-                <td>{row.currency}</td>
-                <td>{row.status}</td>
-                <td>{row.reportingGl || row.principalGl || "—"}</td>
-                <td>
-                  <div className="ps-row-actions">
-                    <button type="button" onClick={() => setModal({ kind: "view", row })}>
-                      View
-                    </button>
-                    <span aria-hidden>·</span>
-                    <button type="button" className="ps-edit" onClick={() => setModal({ kind: "view", row })}>
-                      Workflow <ChevronDown />
-                    </button>
-                  </div>
+            {apiRows === null && !loadError ? (
+              <tr>
+                <td colSpan={9} style={{ textAlign: "center", color: "#6b7280" }}>
+                  Loading…
                 </td>
               </tr>
-            ))}
+            ) : displayRows.length === 0 ? (
+              <tr>
+                <td colSpan={9} style={{ textAlign: "center", color: "#6b7280" }}>
+                  No products yet. Use +Add New Product.
+                </td>
+              </tr>
+            ) : (
+              displayRows.map((row) => (
+                <tr key={`${row.kind}-${row.code}-${row.productName}`}>
+                  <td>{row.code || "—"}</td>
+                  <td>{row.productType}</td>
+                  <td>{row.productName}</td>
+                  <td>{row.term}</td>
+                  <td>{row.interestRate}</td>
+                  <td>{row.currency}</td>
+                  <td>{row.status}</td>
+                  <td>{row.reportingGl || row.principalGl || "—"}</td>
+                  <td>
+                    <div className="ps-row-actions">
+                      <button type="button" onClick={() => setModal({ kind: "view", row })}>
+                        View
+                      </button>
+                      <span aria-hidden>·</span>
+                      <button type="button" className="ps-edit" onClick={() => setModal({ kind: "view", row })}>
+                        Workflow
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -455,30 +473,45 @@ function ProductFormModal({
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [txnTypes, setTxnTypes] = useState<FactoryTxnType[]>([]);
   const [restrictionCodes, setRestrictionCodes] = useState<FactoryRestrictionCode[]>([]);
+  const [properties, setProperties] = useState<ProductPropertyDefinition[]>([]);
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
+  const [glAccounts, setGlAccounts] = useState<GlAccountSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const kind = resolveKind(productType);
+  const selectedGroup = groups.find((g) => g.code === productGroup);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [g, t, r] = await Promise.all([
+        const [g, t, r, props, gls] = await Promise.all([
           listProductGroups("ACTIVE"),
           listFactoryTxnTypes("ACTIVE"),
           listFactoryRestrictionCodes("ACTIVE"),
+          listProductProperties("ACTIVE"),
+          listGlAccounts({ status: "ACTIVE", size: 200 }),
         ]);
         if (cancelled) return;
         setGroups(g);
         setTxnTypes(t);
         setRestrictionCodes(r);
+        setProperties(props);
+        setGlAccounts((gls.content ?? []).filter((x) => x.postable !== false));
         if (!productGroup && g.length) {
           const savings = g.find((x) => x.code.includes("SAVINGS"));
           setProductGroup((savings ?? g[0]).code);
         }
+        setPropertyValues((prev) => {
+          const next = { ...prev };
+          for (const p of props) {
+            if (next[p.code] == null) next[p.code] = "";
+          }
+          return next;
+        });
       } catch {
-        /* keep form usable offline/demo */
+        /* keep form usable if catalogs temporarily unavailable */
       }
     })();
     return () => {
@@ -486,6 +519,51 @@ function ProductFormModal({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load catalogs once on open
   }, []);
+
+  async function attachFactoryConfig(productCode: string, rate: number) {
+    if (selectedTxns.length) {
+      await replaceProductAllowedTxnTypes(productCode, selectedTxns);
+    }
+    if (selectedRestrictions.length) {
+      await replaceProductRestrictionDefaults(
+        productCode,
+        selectedRestrictions.map((restrictionCode) => ({
+          restrictionCode,
+          autoApplyOnOpen: restrictionCode === "ONBOARDING",
+        })),
+      );
+    }
+    const items = Object.entries(propertyValues)
+      .map(([propertyCode, value]) => ({ propertyCode, value: value.trim() }))
+      .filter((x) => x.value !== "");
+    if (rate > 0 && !items.some((x) => x.propertyCode === "CRINTEREST.RATE")) {
+      items.push({ propertyCode: "CRINTEREST.RATE", value: String(rate) });
+    }
+    if (kind === "casa" && minBalance && !items.some((x) => x.propertyCode === "MINIMUM.BALANCE")) {
+      items.push({ propertyCode: "MINIMUM.BALANCE", value: String(Number(minBalance) || 0) });
+    }
+    if (reportingGl.trim() && !items.some((x) => x.propertyCode === "REPORTING.LEDGER")) {
+      items.push({ propertyCode: "REPORTING.LEDGER", value: reportingGl.trim().toUpperCase() });
+    }
+    if (whtGl.trim() && !items.some((x) => x.propertyCode === "WHT.GL")) {
+      items.push({ propertyCode: "WHT.GL", value: whtGl.trim().toUpperCase() });
+    }
+    if (vatGl.trim() && !items.some((x) => x.propertyCode === "VAT.GL")) {
+      items.push({ propertyCode: "VAT.GL", value: vatGl.trim().toUpperCase() });
+    }
+    if (accrualGl.trim() && !items.some((x) => x.propertyCode === "INTEREST.ACCRUAL.LEDGER")) {
+      items.push({ propertyCode: "INTEREST.ACCRUAL.LEDGER", value: accrualGl.trim().toUpperCase() });
+    }
+    if (interestExpenseGl.trim() && !items.some((x) => x.propertyCode === "INTEREST.EXPENSE.LEDGER")) {
+      items.push({
+        propertyCode: "INTEREST.EXPENSE.LEDGER",
+        value: interestExpenseGl.trim().toUpperCase(),
+      });
+    }
+    if (items.length) {
+      await replaceProductPropertyValues(productCode, items);
+    }
+  }
 
   async function saveProduct() {
     setBusy(true);
@@ -522,6 +600,7 @@ function ProductFormModal({
           interestReceivableLedgerAccount: interestRecvGl.trim().toUpperCase(),
           interestIncomeLedgerAccount: interestIncomeGl.trim().toUpperCase(),
         });
+        await attachFactoryConfig(productCode, rate);
         onSaved(mapLoan(p as unknown as Record<string, unknown>));
         return;
       }
@@ -562,6 +641,7 @@ function ProductFormModal({
           contributionAmount: 0,
           stepUpIncrement: 0,
         });
+        await attachFactoryConfig(productCode, rate);
         onSaved(mapInvestment(p as unknown as Record<string, unknown>));
         return;
       }
@@ -578,12 +658,13 @@ function ProductFormModal({
           : accountType === "FIXED_DEPOSIT"
             ? "FIXED.DEPOSIT-GROUP"
             : "SAVINGS.ACCOUNTS-GROUP");
+      const balanceType = selectedGroup?.balanceType || "CREDIT";
       const p = await createCasaProduct({
         code: productCode,
         name,
         accountType,
         productGroup: groupCode,
-        balanceType: "CREDIT",
+        balanceType,
         currency: ccy,
         minimumBalance: Number(minBalance) || 0,
         annualInterestRate: rate,
@@ -598,18 +679,7 @@ function ProductFormModal({
         cashLiteCharge: 0,
         dormancyInactiveDays: 180,
       });
-      if (selectedTxns.length) {
-        await replaceProductAllowedTxnTypes(productCode, selectedTxns);
-      }
-      if (selectedRestrictions.length) {
-        await replaceProductRestrictionDefaults(
-          productCode,
-          selectedRestrictions.map((restrictionCode) => ({
-            restrictionCode,
-            autoApplyOnOpen: restrictionCode === "ONBOARDING",
-          })),
-        );
-      }
+      await attachFactoryConfig(productCode, rate);
       onSaved(mapCasa(p as unknown as Record<string, unknown>));
     } catch (e) {
       setSaveError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Save failed");
@@ -735,7 +805,7 @@ function ProductFormModal({
             <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
 
-          {kind === "casa" && txnTypes.length > 0 ? (
+          {txnTypes.length > 0 ? (
             <label className="ps-field ps-field--full">
               <span>Allowed TXN.TYPE (optional — empty = all)</span>
               <select
@@ -755,7 +825,7 @@ function ProductFormModal({
             </label>
           ) : null}
 
-          {kind === "casa" && restrictionCodes.length > 0 ? (
+          {restrictionCodes.length > 0 ? (
             <label className="ps-field ps-field--full">
               <span>Default RESTRICTION codes (optional)</span>
               <select
@@ -775,37 +845,94 @@ function ProductFormModal({
             </label>
           ) : null}
 
+          {properties.length > 0 ? (
+            <>
+              <p className="ps-section ps-field--full">Product Factory properties</p>
+              {properties.map((prop) => (
+                <label key={prop.code} className="ps-field">
+                  <span>
+                    {prop.name} <span style={{ color: "#9ca3af" }}>({prop.code})</span>
+                  </span>
+                  {prop.valueType === "ENUM" ? (
+                    <div className="ps-select">
+                      <select
+                        value={propertyValues[prop.code] ?? ""}
+                        onChange={(e) =>
+                          setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
+                        }
+                      >
+                        <option value="">—</option>
+                        {(prop.enumOptions ?? []).map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown />
+                    </div>
+                  ) : prop.valueType === "BOOLEAN" ? (
+                    <div className="ps-select">
+                      <select
+                        value={propertyValues[prop.code] ?? ""}
+                        onChange={(e) =>
+                          setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
+                        }
+                      >
+                        <option value="">—</option>
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                      </select>
+                      <ChevronDown />
+                    </div>
+                  ) : prop.valueType === "GL_CODE" ? (
+                    <GlSelect
+                      value={propertyValues[prop.code] ?? ""}
+                      onChange={(v) =>
+                        setPropertyValues((prev) => ({ ...prev, [prop.code]: v }))
+                      }
+                      options={glAccounts}
+                    />
+                  ) : (
+                    <input
+                      value={propertyValues[prop.code] ?? ""}
+                      onChange={(e) =>
+                        setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
+                      }
+                      placeholder={prop.valueType}
+                    />
+                  )}
+                </label>
+              ))}
+            </>
+          ) : null}
+
           <p className="ps-section ps-field--full">Chart of Accounts (Product Factory GLs)</p>
 
           {kind === "casa" ? (
             <>
               <label className="ps-field">
                 <span>Reporting ledger (required)</span>
-                <input
-                  value={reportingGl}
-                  onChange={(e) => setReportingGl(e.target.value)}
-                  placeholder="e.g. 20001"
-                />
+                <GlSelect value={reportingGl} onChange={setReportingGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Interest accrual GL</span>
-                <input value={accrualGl} onChange={(e) => setAccrualGl(e.target.value)} />
+                <GlSelect value={accrualGl} onChange={setAccrualGl} options={glAccounts} />
               </label>
               <label className="ps-field">
                 <span>Interest expense GL</span>
-                <input value={interestExpenseGl} onChange={(e) => setInterestExpenseGl(e.target.value)} />
+                <GlSelect value={interestExpenseGl} onChange={setInterestExpenseGl} options={glAccounts} />
               </label>
               <label className="ps-field">
                 <span>Withholding tax GL</span>
-                <input value={whtGl} onChange={(e) => setWhtGl(e.target.value)} />
+                <GlSelect value={whtGl} onChange={setWhtGl} options={glAccounts} />
               </label>
               <label className="ps-field">
                 <span>VAT GL</span>
-                <input value={vatGl} onChange={(e) => setVatGl(e.target.value)} />
+                <GlSelect value={vatGl} onChange={setVatGl} options={glAccounts} />
               </label>
               <label className="ps-field">
                 <span>Charge income GL</span>
-                <input value={chargeGl} onChange={(e) => setChargeGl(e.target.value)} />
+                <GlSelect value={chargeGl} onChange={setChargeGl} options={glAccounts} />
               </label>
             </>
           ) : null}
@@ -814,22 +941,19 @@ function ProductFormModal({
             <>
               <label className="ps-field">
                 <span>Principal ledger (required)</span>
-                <input
-                  value={principalGl}
-                  onChange={(e) => setPrincipalGl(e.target.value)}
-                  placeholder="13000–13999"
-                />
+                <GlSelect value={principalGl} onChange={setPrincipalGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Interest receivable (required)</span>
-                <input value={interestRecvGl} onChange={(e) => setInterestRecvGl(e.target.value)} />
+                <GlSelect value={interestRecvGl} onChange={setInterestRecvGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Interest income (required)</span>
-                <input
+                <GlSelect
                   value={interestIncomeGl}
-                  onChange={(e) => setInterestIncomeGl(e.target.value)}
-                  placeholder="40000–49999"
+                  onChange={setInterestIncomeGl}
+                  options={glAccounts}
+                  required
                 />
               </label>
             </>
@@ -839,23 +963,23 @@ function ProductFormModal({
             <>
               <label className="ps-field">
                 <span>Principal liability GL</span>
-                <input value={liabGl} onChange={(e) => setLiabGl(e.target.value)} />
+                <GlSelect value={liabGl} onChange={setLiabGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Interest payable GL</span>
-                <input value={payableGl} onChange={(e) => setPayableGl(e.target.value)} />
+                <GlSelect value={payableGl} onChange={setPayableGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Interest expense GL</span>
-                <input value={invExpenseGl} onChange={(e) => setInvExpenseGl(e.target.value)} />
+                <GlSelect value={invExpenseGl} onChange={setInvExpenseGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Withholding tax GL</span>
-                <input value={invWhtGl} onChange={(e) => setInvWhtGl(e.target.value)} />
+                <GlSelect value={invWhtGl} onChange={setInvWhtGl} options={glAccounts} required />
               </label>
               <label className="ps-field">
                 <span>Penalty income GL</span>
-                <input value={penaltyGl} onChange={(e) => setPenaltyGl(e.target.value)} />
+                <GlSelect value={penaltyGl} onChange={setPenaltyGl} options={glAccounts} required />
               </label>
             </>
           ) : null}
@@ -893,11 +1017,28 @@ function ViewProductModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [factoryConfig, setFactoryConfig] = useState<ProductFactoryConfig | null>(null);
 
   const status = row.status.toUpperCase();
   const canSubmit =
     (status === "PENDING_APPROVAL" || status === "DRAFT") && !row.workflowRequestId && !!row.code;
   const canActivate = status === "PENDING_APPROVAL" && !!row.workflowRequestId && !!row.code;
+
+  useEffect(() => {
+    if (!row.code) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cfg = await getProductFactoryConfig(row.code);
+        if (!cancelled) setFactoryConfig(cfg);
+      } catch {
+        if (!cancelled) setFactoryConfig(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [row.code]);
 
   async function onSubmit() {
     if (!row.code) return;
@@ -1020,6 +1161,30 @@ function ViewProductModal({
               <CalendarIcon /> {row.createdDate}
             </dd>
           </div>
+          {factoryConfig?.allowedTxnTypes?.length ? (
+            <div>
+              <dt>Allowed TXN.TYPE</dt>
+              <dd>{factoryConfig.allowedTxnTypes.map((t) => t.code).join(", ")}</dd>
+            </div>
+          ) : null}
+          {factoryConfig?.restrictionDefaults?.length ? (
+            <div>
+              <dt>Restrictions</dt>
+              <dd>
+                {factoryConfig.restrictionDefaults
+                  .map((r) => r.restrictionCode)
+                  .join(", ")}
+              </dd>
+            </div>
+          ) : null}
+          {factoryConfig?.propertyValues?.length
+            ? factoryConfig.propertyValues.map((pv) => (
+                <div key={pv.propertyCode}>
+                  <dt>{pv.propertyName || pv.propertyCode}</dt>
+                  <dd>{pv.value || "—"}</dd>
+                </div>
+              ))
+            : null}
         </dl>
         <footer className="ps-view-foot" style={{ gap: "0.5rem", flexWrap: "wrap" }}>
           {canSubmit ? (
@@ -1037,11 +1202,50 @@ function ViewProductModal({
               Active — usable for account opening.
             </span>
           ) : null}
-          <button type="button" className="ps-btn ps-btn--ghost" onClick={onClose}>
-            Close
+          <button type="button" className="ps-btn ps-btn--primary" onClick={onClose}>
+            Ok
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+function GlSelect({
+  value,
+  onChange,
+  options,
+  required,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: GlAccountSummary[];
+  required?: boolean;
+}) {
+  if (options.length === 0) {
+    return (
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="GL code"
+        required={required}
+      />
+    );
+  }
+  return (
+    <div className="ps-select">
+      <select value={value} onChange={(e) => onChange(e.target.value)} required={required}>
+        <option value="">Select GL</option>
+        {value && !options.some((g) => g.code === value) ? (
+          <option value={value}>{value}</option>
+        ) : null}
+        {options.map((g) => (
+          <option key={g.code} value={g.code}>
+            {g.code} — {g.description || g.code}
+          </option>
+        ))}
+      </select>
+      <ChevronDown />
     </div>
   );
 }

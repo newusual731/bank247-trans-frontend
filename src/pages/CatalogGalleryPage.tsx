@@ -64,7 +64,7 @@ export function CatalogGalleryPage() {
           {live ? <p className="cgal-live">Live options loaded from GL / products / IAM permissions.</p> : null}
           <p>Root Figma PNG option lists — pixel-matched menus, selects, search, tabs, pickers.</p>
         </div>
-        <Link to="/settings/users" className="cgal-back">
+        <Link to="/settings/modules" className="cgal-back">
           ← Settings
         </Link>
       </header>

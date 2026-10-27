@@ -12,8 +12,6 @@ const ROUTE_PERMISSIONS: ReadonlyArray<readonly [prefix: string, permission: str
   ["/reporting", "report.read"],
   ["/reports", "report.read"],
   ["/teller", "teller.read"],
-  ["/settings/roles", "iam.role.read"],
-  ["/settings/users", "iam.user.read"],
   ["/settings/products", "product.read"],
   ["/settings/product-factory", "product.read"],
   ["/notifications", "notification.read"],

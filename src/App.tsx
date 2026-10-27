@@ -71,7 +71,6 @@ import {
 import { TellerCashHubPage } from "./pages/TellerCashHubPage";
 import { TransactionsHubPage } from "./pages/TransactionsHubPage";
 import { TrialBalanceReportPage } from "./pages/TrialBalanceReportPage";
-import { RoleManagementPage, UserManagementPage } from "./pages/UserManagementPage";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { WelcomeDashboardPage } from "./pages/WelcomeDashboardPage";
 import { RequireAuth } from "./auth/RequireAuth";
@@ -120,9 +119,9 @@ export default function App() {
           <Route path="/reports/trial-balance" element={<TrialBalanceReportPage />} />
           <Route path="/reports/journal" element={<JournalReportPage />} />
           <Route path="/products" element={<Navigate to="/settings/products" replace />} />
-          <Route path="/settings" element={<Navigate to="/settings/users" replace />} />
-          <Route path="/settings/users" element={<UserManagementPage />} />
-          <Route path="/settings/roles" element={<RoleManagementPage />} />
+          <Route path="/settings" element={<Navigate to="/settings/modules" replace />} />
+          <Route path="/settings/users" element={<Navigate to="/settings/modules" replace />} />
+          <Route path="/settings/roles" element={<Navigate to="/settings/modules" replace />} />
           <Route path="/settings/products" element={<ProductSetupPage />} />
           <Route path="/settings/product-factory" element={<ProductFactoryPage />} />
           <Route path="/settings/modules" element={<ModuleConfigurationPage />} />
