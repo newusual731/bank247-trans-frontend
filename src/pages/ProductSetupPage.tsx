@@ -287,8 +287,8 @@ export function ProductSetupPage() {
     <div className="ps">
       <h1>Product Setup</h1>
       <p className="ps-hint">
-        Create → Submit for approval → Approve on Approvals → Activate. Catalogs (Group / Properties /
-        TXN.TYPE / RESTRICTION) live under{" "}
+        Product Factory BRD — create leaf products (name, group, balance type, limits, GLs, TXN.TYPE).
+        Then Submit → Approve on Approvals → Activate. Maintain catalogs under{" "}
         <Link to="/settings/product-factory">Product Factory</Link>.
       </p>
       {loadError ? <p role="alert">{loadError}</p> : null}
@@ -336,6 +336,9 @@ export function ProductSetupPage() {
           +Add New Product
         </button>
         <div className="ps-actions-right">
+          <Link to="/settings/product-factory" className="ps-btn ps-btn--ghost" style={{ textDecoration: "none" }}>
+            Product Factory catalogs
+          </Link>
           <button type="button" className="ps-btn ps-btn--export" onClick={() => window.print()}>
             <ExportIcon /> Export
           </button>
@@ -455,6 +458,26 @@ function ProductFormModal({
   const [chargeGl, setChargeGl] = useState("");
   const [minBalance, setMinBalance] = useState("0");
   const [amc, setAmc] = useState("0");
+  const [balanceType, setBalanceType] = useState("CREDIT");
+  const [closure, setClosure] = useState("NA");
+  const [defaultOfficer, setDefaultOfficer] = useState("");
+  const [interestCondition, setInterestCondition] = useState("");
+  const [minOpeningBalance, setMinOpeningBalance] = useState("");
+  const [maxSingleCredit, setMaxSingleCredit] = useState("");
+  const [maxSingleDebit, setMaxSingleDebit] = useState("");
+  const [maxCumCredit, setMaxCumCredit] = useState("");
+  const [maxCumCreditPeriod, setMaxCumCreditPeriod] = useState("");
+  const [maxCumDebit, setMaxCumDebit] = useState("");
+  const [maxCumDebitPeriod, setMaxCumDebitPeriod] = useState("");
+  const [cumulativeBalance, setCumulativeBalance] = useState("");
+  const [allowMultiple, setAllowMultiple] = useState("true");
+  const [enableNotify, setEnableNotify] = useState("true");
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [interestBasis, setInterestBasis] = useState("Actual/365");
+  const [accrualStart, setAccrualStart] = useState("FIRST DAY");
+  const [accrualEnd, setAccrualEnd] = useState("LAST DAY");
+  const [crInterestEligible, setCrInterestEligible] = useState("true");
 
   // Loan GLs
   const [principalGl, setPrincipalGl] = useState("");
@@ -481,6 +504,11 @@ function ProductFormModal({
 
   const kind = resolveKind(productType);
   const selectedGroup = groups.find((g) => g.code === productGroup);
+
+  useEffect(() => {
+    if (selectedGroup?.balanceType) setBalanceType(selectedGroup.balanceType);
+    if (selectedGroup) setEnableNotify(selectedGroup.enableNotificationAlert ? "true" : "false");
+  }, [selectedGroup?.code, selectedGroup?.balanceType, selectedGroup?.enableNotificationAlert]);
 
   useEffect(() => {
     let cancelled = false;
@@ -520,46 +548,73 @@ function ProductFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load catalogs once on open
   }, []);
 
+  function setProp(code: string, value: string) {
+    setPropertyValues((prev) => ({ ...prev, [code]: value }));
+  }
+
   async function attachFactoryConfig(productCode: string, rate: number) {
     if (selectedTxns.length) {
       await replaceProductAllowedTxnTypes(productCode, selectedTxns);
     }
-    if (selectedRestrictions.length) {
+    const restrictionItems = [...selectedRestrictions];
+    if (closure === "CLOSE_AFTER_30_DAYS_NO_TXN" && !restrictionItems.includes("AUTO_CLOSE")) {
+      // Prefer catalog code if present; otherwise still attach listed selections.
+      const auto = restrictionCodes.find((r) => r.code.includes("AUTO") || r.closureRule.includes("CLOSE"));
+      if (auto && !restrictionItems.includes(auto.code)) restrictionItems.push(auto.code);
+    }
+    if (restrictionItems.length) {
       await replaceProductRestrictionDefaults(
         productCode,
-        selectedRestrictions.map((restrictionCode) => ({
+        restrictionItems.map((restrictionCode) => ({
           restrictionCode,
           autoApplyOnOpen: restrictionCode === "ONBOARDING",
         })),
       );
     }
-    const items = Object.entries(propertyValues)
-      .map(([propertyCode, value]) => ({ propertyCode, value: value.trim() }))
-      .filter((x) => x.value !== "");
-    if (rate > 0 && !items.some((x) => x.propertyCode === "CRINTEREST.RATE")) {
-      items.push({ propertyCode: "CRINTEREST.RATE", value: String(rate) });
+
+    const put = (map: Map<string, string>, code: string, value: string) => {
+      const v = value.trim();
+      if (v) map.set(code, v);
+    };
+    const map = new Map<string, string>();
+    for (const [propertyCode, value] of Object.entries(propertyValues)) {
+      put(map, propertyCode, value);
     }
-    if (kind === "casa" && minBalance && !items.some((x) => x.propertyCode === "MINIMUM.BALANCE")) {
-      items.push({ propertyCode: "MINIMUM.BALANCE", value: String(Number(minBalance) || 0) });
-    }
-    if (reportingGl.trim() && !items.some((x) => x.propertyCode === "REPORTING.LEDGER")) {
-      items.push({ propertyCode: "REPORTING.LEDGER", value: reportingGl.trim().toUpperCase() });
-    }
-    if (whtGl.trim() && !items.some((x) => x.propertyCode === "WHT.GL")) {
-      items.push({ propertyCode: "WHT.GL", value: whtGl.trim().toUpperCase() });
-    }
-    if (vatGl.trim() && !items.some((x) => x.propertyCode === "VAT.GL")) {
-      items.push({ propertyCode: "VAT.GL", value: vatGl.trim().toUpperCase() });
-    }
-    if (accrualGl.trim() && !items.some((x) => x.propertyCode === "INTEREST.ACCRUAL.LEDGER")) {
-      items.push({ propertyCode: "INTEREST.ACCRUAL.LEDGER", value: accrualGl.trim().toUpperCase() });
-    }
-    if (interestExpenseGl.trim() && !items.some((x) => x.propertyCode === "INTEREST.EXPENSE.LEDGER")) {
-      items.push({
-        propertyCode: "INTEREST.EXPENSE.LEDGER",
-        value: interestExpenseGl.trim().toUpperCase(),
-      });
-    }
+    if (rate > 0) put(map, "CRINTEREST.RATE", String(rate));
+    put(map, "CRINTEREST.ELIGIBILITY", crInterestEligible);
+    put(map, "INTEREST.BASIS", interestBasis);
+    put(map, "ACCRUAL.CYCLE.START", accrualStart);
+    put(map, "ACCRUAL.CYCLE.END", accrualEnd);
+    put(map, "MINIMUM.BALANCE", String(Number(minBalance) || 0));
+    put(map, "MINIMUM.OPENING.BALANCE", minOpeningBalance);
+    put(map, "MAX.SINGLE.CREDIT", maxSingleCredit);
+    put(map, "MAX.SINGLE.DEBIT", maxSingleDebit);
+    put(map, "MAX.CUMULATIVE.CREDIT", maxCumCredit);
+    put(map, "MAX.CUMULATIVE.DEBIT", maxCumDebit);
+    put(map, "ALLOW_MULTIPLE_ACCOUNTS", allowMultiple);
+    put(map, "REPORTING.LEDGER", reportingGl.toUpperCase());
+    put(map, "INTEREST.ACCRUAL.LEDGER", accrualGl.toUpperCase());
+    put(map, "INTEREST.EXPENSE.LEDGER", interestExpenseGl.toUpperCase());
+    put(map, "WHT.GL", whtGl.toUpperCase());
+    put(map, "VAT.GL", vatGl.toUpperCase());
+    put(map, "CUMULATIVE.BALANCE", cumulativeBalance);
+    put(map, "DEFAULT.ACCOUNT.OFFICER", defaultOfficer);
+    put(map, "EFFECTIVE.DATE", effectiveDate);
+    put(map, "EXPIRY.DATE", expiryDate);
+    put(map, "ENABLE.NOTIFICATION.ALERT", enableNotify);
+    put(map, "INTEREST.CONDITION", interestCondition);
+    put(map, "MAX.CUMULATIVE.CREDIT.PERIOD", maxCumCreditPeriod);
+    put(map, "MAX.CUMULATIVE.DEBIT.PERIOD", maxCumDebitPeriod);
+    put(
+      map,
+      "CLOSURE.RULE",
+      closure === "CLOSE_AFTER_30_DAYS_NO_TXN" ? "CLOSE AFTER 30 DAYS OF NO TXN" : "NA",
+    );
+
+    const known = new Set(properties.map((p) => p.code));
+    const items = [...map.entries()]
+      .filter(([propertyCode]) => known.size === 0 || known.has(propertyCode))
+      .map(([propertyCode, value]) => ({ propertyCode, value }));
     if (items.length) {
       await replaceProductPropertyValues(productCode, items);
     }
@@ -658,17 +713,17 @@ function ProductFormModal({
           : accountType === "FIXED_DEPOSIT"
             ? "FIXED.DEPOSIT-GROUP"
             : "SAVINGS.ACCOUNTS-GROUP");
-      const balanceType = selectedGroup?.balanceType || "CREDIT";
+      const basisDays = interestBasis.includes("360") ? 360 : interestBasis.includes("366") ? 366 : 365;
       const p = await createCasaProduct({
         code: productCode,
         name,
         accountType,
         productGroup: groupCode,
-        balanceType,
+        balanceType: balanceType || selectedGroup?.balanceType || "CREDIT",
         currency: ccy,
         minimumBalance: Number(minBalance) || 0,
         annualInterestRate: rate,
-        interestBasisDays: 365,
+        interestBasisDays: basisDays,
         reportingLedgerAccount: reportingGl.trim().toUpperCase(),
         interestAccrualLedgerAccount: accrualGl.trim().toUpperCase() || undefined,
         interestExpenseLedgerAccount: interestExpenseGl.trim().toUpperCase() || undefined,
@@ -677,7 +732,7 @@ function ProductFormModal({
         chargeIncomeLedgerAccount: chargeGl.trim().toUpperCase() || undefined,
         monthlyMaintenanceCharge: Number(amc) || 0,
         cashLiteCharge: 0,
-        dormancyInactiveDays: 180,
+        dormancyInactiveDays: closure === "CLOSE_AFTER_30_DAYS_NO_TXN" ? 30 : 180,
       });
       await attachFactoryConfig(productCode, rate);
       onSaved(mapCasa(p as unknown as Record<string, unknown>));
@@ -702,8 +757,8 @@ function ProductFormModal({
         {saveError ? <p role="alert">{saveError}</p> : null}
         <header className="ps-modal-head">
           <div>
-            <h2 id="product-form-title">Add New Product</h2>
-            <h3>Product Details · {kind.toUpperCase()}</h3>
+            <h2 id="product-form-title">Product Creation Interface</h2>
+            <h3>Product Factory BRD · {kind === "casa" ? "CASA" : kind.toUpperCase()}</h3>
           </div>
           <button type="button" className="ps-modal-close" onClick={onClose} aria-label="Close">
             ×
@@ -712,7 +767,7 @@ function ProductFormModal({
 
         <div className="ps-modal-grid">
           <label className="ps-field">
-            <span>Product Type</span>
+            <span>Account / product type</span>
             <div className="ps-select">
               <select value={productType} onChange={(e) => setProductType(e.target.value)}>
                 {createTypes.map((o) => (
@@ -723,16 +778,22 @@ function ProductFormModal({
             </div>
           </label>
           <label className="ps-field">
-            <span>Product Code</span>
+            <span>Product Name</span>
             <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="e.g. SAV001"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="Savings - regular"
+              required
             />
           </label>
           <label className="ps-field">
-            <span>Product Name</span>
-            <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="" />
+            <span>Product_ID</span>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="SAV001"
+              required
+            />
           </label>
           <label className="ps-field">
             <span>Currency</span>
@@ -745,46 +806,391 @@ function ProductFormModal({
               <ChevronDown />
             </div>
           </label>
+
           {kind === "casa" ? (
-            <label className="ps-field">
-              <span>Product group</span>
-              <div className="ps-select">
-                <select value={productGroup} onChange={(e) => setProductGroup(e.target.value)} required>
-                  {groups.length === 0 ? <option value="">Loading groups…</option> : null}
-                  {groups.map((g) => (
-                    <option key={g.code} value={g.code}>
-                      {g.name} ({g.code})
+            <>
+              <label className="ps-field">
+                <span>Product_group</span>
+                <div className="ps-select">
+                  <select value={productGroup} onChange={(e) => setProductGroup(e.target.value)} required>
+                    {groups.length === 0 ? <option value="">Loading groups…</option> : null}
+                    {groups.map((g) => (
+                      <option key={g.code} value={g.code}>
+                        {g.name} ({g.code})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>BALANCE_TYPE</span>
+                <div className="ps-select">
+                  <select value={balanceType} onChange={(e) => setBalanceType(e.target.value)}>
+                    {["CREDIT", "DEBIT", "BOTH"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>MINIMUM.BALANCE</span>
+                <input value={minBalance} onChange={(e) => setMinBalance(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>MINIMUM.OPENING.BALANCE</span>
+                <input
+                  value={minOpeningBalance}
+                  onChange={(e) => setMinOpeningBalance(e.target.value)}
+                  placeholder="NULL or numeric"
+                />
+              </label>
+
+              <p className="ps-section ps-field--full">PROPERTY.1 — CRINTEREST</p>
+              <label className="ps-field">
+                <span>CRINTEREST.RATE %</span>
+                <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>CRINTEREST.ELIGIBILITY</span>
+                <div className="ps-select">
+                  <select
+                    value={crInterestEligible}
+                    onChange={(e) => setCrInterestEligible(e.target.value)}
+                  >
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>Interest.Basis</span>
+                <div className="ps-select">
+                  <select value={interestBasis} onChange={(e) => setInterestBasis(e.target.value)}>
+                    {["Actual/360", "Actual/365", "Actual/366"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>INTEREST CONDITION (max of 4)</span>
+                <input
+                  value={interestCondition}
+                  onChange={(e) => setInterestCondition(e.target.value)}
+                  placeholder="Optional notes / condition count"
+                />
+              </label>
+              <label className="ps-field">
+                <span>Accrual Cycle Start</span>
+                <div className="ps-select">
+                  <select value={accrualStart} onChange={(e) => setAccrualStart(e.target.value)}>
+                    <option>FIRST DAY</option>
+                    <option>LAST DAY</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>Accrual Cycle End</span>
+                <div className="ps-select">
+                  <select value={accrualEnd} onChange={(e) => setAccrualEnd(e.target.value)}>
+                    <option>FIRST DAY</option>
+                    <option>LAST DAY</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+
+              <p className="ps-section ps-field--full">PROPERTY.2 — TXN.TYPE (empty = ALL)</p>
+              <label className="ps-field ps-field--full">
+                <span>Allowed TXN.TYPE</span>
+                <select
+                  multiple
+                  size={Math.min(8, Math.max(4, txnTypes.length))}
+                  value={selectedTxns}
+                  onChange={(e) =>
+                    setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
+                  }
+                >
+                  {txnTypes.map((t) => (
+                    <option key={t.code} value={t.code}>
+                      {t.code} — {t.description}
                     </option>
                   ))}
                 </select>
-                <ChevronDown />
-              </div>
-            </label>
-          ) : null}
-          {kind !== "casa" ? (
-            <label className="ps-field">
-              <span>Term</span>
-              <div className="ps-select">
-                <select value={term} onChange={(e) => setTerm(e.target.value)}>
-                  {PRODUCT_TERMS.map((o) => (
-                    <option key={o}>{o}</option>
-                  ))}
-                </select>
-                <ChevronDown />
-              </div>
-            </label>
+              </label>
+
+              <label className="ps-field">
+                <span>CLOSURE</span>
+                <div className="ps-select">
+                  <select value={closure} onChange={(e) => setClosure(e.target.value)}>
+                    <option value="NA">NA</option>
+                    <option value="CLOSE_AFTER_30_DAYS_NO_TXN">CLOSE AFTER 30 DAYS OF NO TXN</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>DEFAULT ACCOUNT OFFICER</span>
+                <input
+                  value={defaultOfficer}
+                  onChange={(e) => setDefaultOfficer(e.target.value)}
+                  placeholder="e.g. 100"
+                />
+              </label>
+
+              <p className="ps-section ps-field--full">Ledger GLs</p>
+              <label className="ps-field">
+                <span>REPORTING LEDGER CODE</span>
+                <GlSelect value={reportingGl} onChange={setReportingGl} options={glAccounts} required />
+              </label>
+              <label className="ps-field">
+                <span>INTEREST ACCRUAL LEDGER CODE</span>
+                <GlSelect value={accrualGl} onChange={setAccrualGl} options={glAccounts} />
+              </label>
+              <label className="ps-field">
+                <span>INTEREST EXPENSE LEDGER CODE</span>
+                <GlSelect value={interestExpenseGl} onChange={setInterestExpenseGl} options={glAccounts} />
+              </label>
+              <label className="ps-field">
+                <span>Withholding Tax GL</span>
+                <GlSelect value={whtGl} onChange={setWhtGl} options={glAccounts} />
+              </label>
+              <label className="ps-field">
+                <span>VALUE ADDED TAX GL</span>
+                <GlSelect value={vatGl} onChange={setVatGl} options={glAccounts} />
+              </label>
+              <label className="ps-field">
+                <span>Charge income GL</span>
+                <GlSelect value={chargeGl} onChange={setChargeGl} options={glAccounts} />
+              </label>
+              <label className="ps-field">
+                <span>Monthly maintenance charge</span>
+                <input value={amc} onChange={(e) => setAmc(e.target.value)} />
+              </label>
+
+              <p className="ps-section ps-field--full">Limits &amp; flags</p>
+              <label className="ps-field">
+                <span>MAX SINGLE CREDIT</span>
+                <input value={maxSingleCredit} onChange={(e) => setMaxSingleCredit(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>MAX SINGLE DEBIT</span>
+                <input value={maxSingleDebit} onChange={(e) => setMaxSingleDebit(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>MAX CUMULATIVE CREDIT</span>
+                <input value={maxCumCredit} onChange={(e) => setMaxCumCredit(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>MAX CUMULATIVE CREDIT PERIOD</span>
+                <div className="ps-select">
+                  <select
+                    value={maxCumCreditPeriod}
+                    onChange={(e) => setMaxCumCreditPeriod(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>MAX CUMULATIVE DEBIT</span>
+                <input value={maxCumDebit} onChange={(e) => setMaxCumDebit(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>MAX CUMULATIVE DEBIT PERIOD</span>
+                <div className="ps-select">
+                  <select
+                    value={maxCumDebitPeriod}
+                    onChange={(e) => setMaxCumDebitPeriod(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>CUMULATIVE BALANCE</span>
+                <input value={cumulativeBalance} onChange={(e) => setCumulativeBalance(e.target.value)} />
+              </label>
+              <label className="ps-field">
+                <span>ALLOW_MULTIPLE_ACCOUNTS</span>
+                <div className="ps-select">
+                  <select value={allowMultiple} onChange={(e) => setAllowMultiple(e.target.value)}>
+                    <option value="true">TRUE</option>
+                    <option value="false">FALSE</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>ENABLE.NOTIFICATION.ALERT</span>
+                <div className="ps-select">
+                  <select value={enableNotify} onChange={(e) => setEnableNotify(e.target.value)}>
+                    <option value="true">TRUE</option>
+                    <option value="false">FALSE</option>
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>EFFECTIVE.DATE</span>
+                <input
+                  type="date"
+                  value={effectiveDate}
+                  onChange={(e) => setEffectiveDate(e.target.value)}
+                />
+              </label>
+              <label className="ps-field">
+                <span>EXPIRY.DATE</span>
+                <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+              </label>
+
+              {restrictionCodes.length > 0 ? (
+                <label className="ps-field ps-field--full">
+                  <span>Default RESTRICTION codes (optional)</span>
+                  <select
+                    multiple
+                    size={Math.min(6, restrictionCodes.length)}
+                    value={selectedRestrictions}
+                    onChange={(e) =>
+                      setSelectedRestrictions(Array.from(e.target.selectedOptions).map((o) => o.value))
+                    }
+                  >
+                    {restrictionCodes.map((r) => (
+                      <option key={r.code} value={r.code}>
+                        {r.code} — {r.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+
+              {properties.filter(
+                (p) =>
+                  ![
+                    "CRINTEREST.RATE",
+                    "CRINTEREST.ELIGIBILITY",
+                    "INTEREST.BASIS",
+                    "ACCRUAL.CYCLE.START",
+                    "ACCRUAL.CYCLE.END",
+                    "MINIMUM.BALANCE",
+                    "MINIMUM.OPENING.BALANCE",
+                    "MAX.SINGLE.CREDIT",
+                    "MAX.SINGLE.DEBIT",
+                    "MAX.CUMULATIVE.CREDIT",
+                    "MAX.CUMULATIVE.DEBIT",
+                    "ALLOW_MULTIPLE_ACCOUNTS",
+                    "REPORTING.LEDGER",
+                    "INTEREST.ACCRUAL.LEDGER",
+                    "INTEREST.EXPENSE.LEDGER",
+                    "WHT.GL",
+                    "VAT.GL",
+                  ].includes(p.code),
+              ).length > 0 ? (
+                <>
+                  <p className="ps-section ps-field--full">Additional catalog properties</p>
+                  {properties
+                    .filter(
+                      (p) =>
+                        ![
+                          "CRINTEREST.RATE",
+                          "CRINTEREST.ELIGIBILITY",
+                          "INTEREST.BASIS",
+                          "ACCRUAL.CYCLE.START",
+                          "ACCRUAL.CYCLE.END",
+                          "MINIMUM.BALANCE",
+                          "MINIMUM.OPENING.BALANCE",
+                          "MAX.SINGLE.CREDIT",
+                          "MAX.SINGLE.DEBIT",
+                          "MAX.CUMULATIVE.CREDIT",
+                          "MAX.CUMULATIVE.DEBIT",
+                          "ALLOW_MULTIPLE_ACCOUNTS",
+                          "REPORTING.LEDGER",
+                          "INTEREST.ACCRUAL.LEDGER",
+                          "INTEREST.EXPENSE.LEDGER",
+                          "WHT.GL",
+                          "VAT.GL",
+                        ].includes(p.code),
+                    )
+                    .map((prop) => (
+                      <label key={prop.code} className="ps-field">
+                        <span>
+                          {prop.name}{" "}
+                          <span style={{ color: "#9ca3af" }}>({prop.code})</span>
+                        </span>
+                        {prop.valueType === "ENUM" ? (
+                          <div className="ps-select">
+                            <select
+                              value={propertyValues[prop.code] ?? ""}
+                              onChange={(e) => setProp(prop.code, e.target.value)}
+                            >
+                              <option value="">—</option>
+                              {(prop.enumOptions ?? []).map((o) => (
+                                <option key={o} value={o}>
+                                  {o}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown />
+                          </div>
+                        ) : prop.valueType === "BOOLEAN" ? (
+                          <div className="ps-select">
+                            <select
+                              value={propertyValues[prop.code] ?? ""}
+                              onChange={(e) => setProp(prop.code, e.target.value)}
+                            >
+                              <option value="">—</option>
+                              <option value="true">true</option>
+                              <option value="false">false</option>
+                            </select>
+                            <ChevronDown />
+                          </div>
+                        ) : prop.valueType === "GL_CODE" ? (
+                          <GlSelect
+                            value={propertyValues[prop.code] ?? ""}
+                            onChange={(v) => setProp(prop.code, v)}
+                            options={glAccounts}
+                          />
+                        ) : (
+                          <input
+                            value={propertyValues[prop.code] ?? ""}
+                            onChange={(e) => setProp(prop.code, e.target.value)}
+                          />
+                        )}
+                      </label>
+                    ))}
+                </>
+              ) : null}
+            </>
           ) : (
-            <label className="ps-field">
-              <span>Minimum balance</span>
-              <input value={minBalance} onChange={(e) => setMinBalance(e.target.value)} />
-            </label>
-          )}
-          <label className="ps-field">
-            <span>Interest Rate %</span>
-            <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} />
-          </label>
-          {kind !== "casa" ? (
             <>
+              <label className="ps-field">
+                <span>Term</span>
+                <div className="ps-select">
+                  <select value={term} onChange={(e) => setTerm(e.target.value)}>
+                    {PRODUCT_TERMS.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronDown />
+                </div>
+              </label>
+              <label className="ps-field">
+                <span>Interest Rate %</span>
+                <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} />
+              </label>
               <label className="ps-field">
                 <span>Min amount</span>
                 <input value={minAmt} onChange={(e) => setMinAmt(e.target.value)} />
@@ -793,196 +1199,86 @@ function ProductFormModal({
                 <span>Max amount</span>
                 <input value={maxAmt} onChange={(e) => setMaxAmt(e.target.value)} />
               </label>
-            </>
-          ) : (
-            <label className="ps-field">
-              <span>Monthly maintenance charge</span>
-              <input value={amc} onChange={(e) => setAmc(e.target.value)} />
-            </label>
-          )}
-          <label className="ps-field ps-field--full">
-            <span>Description / notes</span>
-            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-          </label>
-
-          {txnTypes.length > 0 ? (
-            <label className="ps-field ps-field--full">
-              <span>Allowed TXN.TYPE (optional — empty = all)</span>
-              <select
-                multiple
-                size={Math.min(8, txnTypes.length)}
-                value={selectedTxns}
-                onChange={(e) =>
-                  setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
-                }
-              >
-                {txnTypes.map((t) => (
-                  <option key={t.code} value={t.code}>
-                    {t.code} — {t.description}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-
-          {restrictionCodes.length > 0 ? (
-            <label className="ps-field ps-field--full">
-              <span>Default RESTRICTION codes (optional)</span>
-              <select
-                multiple
-                size={Math.min(6, restrictionCodes.length)}
-                value={selectedRestrictions}
-                onChange={(e) =>
-                  setSelectedRestrictions(Array.from(e.target.selectedOptions).map((o) => o.value))
-                }
-              >
-                {restrictionCodes.map((r) => (
-                  <option key={r.code} value={r.code}>
-                    {r.code} — {r.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-
-          {properties.length > 0 ? (
-            <>
-              <p className="ps-section ps-field--full">Product Factory properties</p>
-              {properties.map((prop) => (
-                <label key={prop.code} className="ps-field">
-                  <span>
-                    {prop.name} <span style={{ color: "#9ca3af" }}>({prop.code})</span>
-                  </span>
-                  {prop.valueType === "ENUM" ? (
-                    <div className="ps-select">
-                      <select
-                        value={propertyValues[prop.code] ?? ""}
-                        onChange={(e) =>
-                          setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
-                        }
-                      >
-                        <option value="">—</option>
-                        {(prop.enumOptions ?? []).map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown />
-                    </div>
-                  ) : prop.valueType === "BOOLEAN" ? (
-                    <div className="ps-select">
-                      <select
-                        value={propertyValues[prop.code] ?? ""}
-                        onChange={(e) =>
-                          setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
-                        }
-                      >
-                        <option value="">—</option>
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                      </select>
-                      <ChevronDown />
-                    </div>
-                  ) : prop.valueType === "GL_CODE" ? (
-                    <GlSelect
-                      value={propertyValues[prop.code] ?? ""}
-                      onChange={(v) =>
-                        setPropertyValues((prev) => ({ ...prev, [prop.code]: v }))
-                      }
-                      options={glAccounts}
-                    />
-                  ) : (
-                    <input
-                      value={propertyValues[prop.code] ?? ""}
-                      onChange={(e) =>
-                        setPropertyValues((prev) => ({ ...prev, [prop.code]: e.target.value }))
-                      }
-                      placeholder={prop.valueType}
-                    />
-                  )}
+              <label className="ps-field ps-field--full">
+                <span>Description / notes</span>
+                <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+              </label>
+              {txnTypes.length > 0 ? (
+                <label className="ps-field ps-field--full">
+                  <span>Allowed TXN.TYPE</span>
+                  <select
+                    multiple
+                    size={Math.min(8, txnTypes.length)}
+                    value={selectedTxns}
+                    onChange={(e) =>
+                      setSelectedTxns(Array.from(e.target.selectedOptions).map((o) => o.value))
+                    }
+                  >
+                    {txnTypes.map((t) => (
+                      <option key={t.code} value={t.code}>
+                        {t.code} — {t.description}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-              ))}
+              ) : null}
+              <p className="ps-section ps-field--full">Chart of Accounts</p>
+              {kind === "loans" ? (
+                <>
+                  <label className="ps-field">
+                    <span>Principal ledger</span>
+                    <GlSelect value={principalGl} onChange={setPrincipalGl} options={glAccounts} required />
+                  </label>
+                  <label className="ps-field">
+                    <span>Interest receivable</span>
+                    <GlSelect
+                      value={interestRecvGl}
+                      onChange={setInterestRecvGl}
+                      options={glAccounts}
+                      required
+                    />
+                  </label>
+                  <label className="ps-field">
+                    <span>Interest income</span>
+                    <GlSelect
+                      value={interestIncomeGl}
+                      onChange={setInterestIncomeGl}
+                      options={glAccounts}
+                      required
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className="ps-field">
+                    <span>Principal liability GL</span>
+                    <GlSelect value={liabGl} onChange={setLiabGl} options={glAccounts} required />
+                  </label>
+                  <label className="ps-field">
+                    <span>Interest payable GL</span>
+                    <GlSelect value={payableGl} onChange={setPayableGl} options={glAccounts} required />
+                  </label>
+                  <label className="ps-field">
+                    <span>Interest expense GL</span>
+                    <GlSelect
+                      value={invExpenseGl}
+                      onChange={setInvExpenseGl}
+                      options={glAccounts}
+                      required
+                    />
+                  </label>
+                  <label className="ps-field">
+                    <span>Withholding tax GL</span>
+                    <GlSelect value={invWhtGl} onChange={setInvWhtGl} options={glAccounts} required />
+                  </label>
+                  <label className="ps-field">
+                    <span>Penalty income GL</span>
+                    <GlSelect value={penaltyGl} onChange={setPenaltyGl} options={glAccounts} required />
+                  </label>
+                </>
+              )}
             </>
-          ) : null}
-
-          <p className="ps-section ps-field--full">Chart of Accounts (Product Factory GLs)</p>
-
-          {kind === "casa" ? (
-            <>
-              <label className="ps-field">
-                <span>Reporting ledger (required)</span>
-                <GlSelect value={reportingGl} onChange={setReportingGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Interest accrual GL</span>
-                <GlSelect value={accrualGl} onChange={setAccrualGl} options={glAccounts} />
-              </label>
-              <label className="ps-field">
-                <span>Interest expense GL</span>
-                <GlSelect value={interestExpenseGl} onChange={setInterestExpenseGl} options={glAccounts} />
-              </label>
-              <label className="ps-field">
-                <span>Withholding tax GL</span>
-                <GlSelect value={whtGl} onChange={setWhtGl} options={glAccounts} />
-              </label>
-              <label className="ps-field">
-                <span>VAT GL</span>
-                <GlSelect value={vatGl} onChange={setVatGl} options={glAccounts} />
-              </label>
-              <label className="ps-field">
-                <span>Charge income GL</span>
-                <GlSelect value={chargeGl} onChange={setChargeGl} options={glAccounts} />
-              </label>
-            </>
-          ) : null}
-
-          {kind === "loans" ? (
-            <>
-              <label className="ps-field">
-                <span>Principal ledger (required)</span>
-                <GlSelect value={principalGl} onChange={setPrincipalGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Interest receivable (required)</span>
-                <GlSelect value={interestRecvGl} onChange={setInterestRecvGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Interest income (required)</span>
-                <GlSelect
-                  value={interestIncomeGl}
-                  onChange={setInterestIncomeGl}
-                  options={glAccounts}
-                  required
-                />
-              </label>
-            </>
-          ) : null}
-
-          {kind === "investments" ? (
-            <>
-              <label className="ps-field">
-                <span>Principal liability GL</span>
-                <GlSelect value={liabGl} onChange={setLiabGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Interest payable GL</span>
-                <GlSelect value={payableGl} onChange={setPayableGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Interest expense GL</span>
-                <GlSelect value={invExpenseGl} onChange={setInvExpenseGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Withholding tax GL</span>
-                <GlSelect value={invWhtGl} onChange={setInvWhtGl} options={glAccounts} required />
-              </label>
-              <label className="ps-field">
-                <span>Penalty income GL</span>
-                <GlSelect value={penaltyGl} onChange={setPenaltyGl} options={glAccounts} required />
-              </label>
-            </>
-          ) : null}
+          )}
         </div>
 
         <footer className="ps-modal-foot">

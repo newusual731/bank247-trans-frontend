@@ -38,13 +38,25 @@ export function ModuleConfigurationPage() {
             ›
           </span>
         </Link>
-        <Link to="/settings/product-factory" className="mcfg-card">
+        <Link to="/settings/products" className="mcfg-card">
           <span className="mcfg-card-icon is-limit" aria-hidden>
             ▣
           </span>
           <div>
+            <strong>Product Setup</strong>
+            <em>Create and manage leaf products (Product Factory BRD)</em>
+          </div>
+          <span className="mcfg-chev" aria-hidden>
+            ›
+          </span>
+        </Link>
+        <Link to="/settings/product-factory" className="mcfg-card">
+          <span className="mcfg-card-icon is-limit" aria-hidden>
+            ▦
+          </span>
+          <div>
             <strong>Product Factory</strong>
-            <em>Groups, properties, TXN.TYPE, and restriction catalogs</em>
+            <em>Product.Group, Properties, TXN.TYPE, and RESTRICTION catalogs</em>
           </div>
           <span className="mcfg-chev" aria-hidden>
             ›

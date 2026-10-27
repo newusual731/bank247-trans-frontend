@@ -12,6 +12,7 @@ const NAV = [
   { to: "/transactions/approvals", label: "Approvals", icon: "approve" },
   { to: "/gl", label: "General Ledger", icon: "gl" },
   { to: "/contracts/balances", label: "Contracts Products", icon: "contracts", matchPrefix: "/contracts" },
+  { to: "/settings/products", label: "Product Setup", icon: "products", matchPrefix: "/settings/product" },
   { to: "/reporting", label: "Reports", icon: "reports", matchPrefix: "/report" },
   { to: "/teller", label: "Teller", icon: "tx", matchPrefix: "/teller" },
   { to: "/settings/modules", label: "Settings", icon: "settings", matchPrefix: "/settings" },
@@ -62,10 +63,12 @@ export function AppShell() {
         <nav className="shell-nav" aria-label="Main">
           {NAV.map((item) => {
             const onApprovals = location.pathname.startsWith("/transactions/approvals");
+            const onProductSettings = location.pathname.startsWith("/settings/product");
             const prefixActive =
               "matchPrefix" in item &&
               location.pathname.startsWith(item.matchPrefix) &&
-              !(item.matchPrefix === "/transactions" && onApprovals);
+              !(item.matchPrefix === "/transactions" && onApprovals) &&
+              !(item.matchPrefix === "/settings" && onProductSettings);
             return (
               <NavLink
                 key={item.to}
@@ -228,6 +231,18 @@ function NavIcon({ name }: { name: string }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
           <path d="M3 12h18M12 4a12 12 0 010 16M12 4a12 12 0 000 16" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      );
+    case "products":
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M4 7.5L12 3l8 4.5v9L12 21l-8-4.5v-9z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+          <path d="M12 12v9M12 12L4 7.5M12 12l8-4.5" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       );
     case "reports":
